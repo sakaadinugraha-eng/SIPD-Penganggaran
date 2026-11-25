@@ -1,649 +1,295 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Aplikasi Keuangan & Perencanaan Daerah</title>
+    <title>Portal Aplikasi Internal</title>
     
-    <!-- Google Fonts: Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Import Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- FontAwesome 6 -->
+    <!-- Import FontAwesome untuk Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root[data-theme="dark"] {
-            --bg: #090c15;
-            --surface: #101524;
-            --surface-hover: #151c30;
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.22);
-            --text-title: #f8fafc;
-            --text-desc: #94a3b8;
-            --text-sub: #64748b;
-            --search-bg: rgba(255, 255, 255, 0.04);
-            --search-border: rgba(255, 255, 255, 0.1);
-            --card-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5);
-            --kbd-bg: rgba(255, 255, 255, 0.08);
-            --kbd-text: #cbd5e1;
-            --badge-bg: rgba(255, 255, 255, 0.05);
-            --glow-color: rgba(99, 102, 241, 0.12);
+        /* === VARIABEL TEMA LIGHT (DEFAULT) === */
+        :root[data-theme="light"] {
+            --bg-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            --container-bg: rgba(255, 255, 255, 0.85);
+            --container-border: rgba(255, 255, 255, 0.4);
+            --container-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+            --card-bg: #ffffff;
+            --card-text: #2c3e50;
+            --card-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
+            --title-color: #2c3e50;
+            --desc-color: #7f8c8d;
+            --toggle-bg: #ffffff;
+            --toggle-text: #2c3e50;
+            --toggle-border: rgba(0, 0, 0, 0.1);
         }
 
-        :root[data-theme="light"] {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --surface-hover: #ffffff;
-            --border: #e2e8f0;
-            --border-hover: #cbd5e1;
-            --text-title: #0f172a;
-            --text-desc: #475569;
-            --text-sub: #94a3b8;
-            --search-bg: #ffffff;
-            --search-border: #cbd5e1;
-            --card-shadow: 0 14px 30px -8px rgba(15, 23, 42, 0.08);
-            --kbd-bg: #e2e8f0;
-            --kbd-text: #475569;
-            --badge-bg: #f1f5f9;
-            --glow-color: rgba(99, 102, 241, 0.06);
+        /* === VARIABEL TEMA DARK === */
+        :root[data-theme="dark"] {
+            --bg-gradient: linear-gradient(-45deg, #090d16, #1a1636, #0d2238, #0b1a20);
+            --container-bg: rgba(16, 22, 36, 0.85);
+            --container-border: rgba(255, 255, 255, 0.1);
+            --container-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            --card-bg: #182032;
+            --card-text: #f1f5f9;
+            --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --title-color: #f8fafc;
+            --desc-color: #94a3b8;
+            --toggle-bg: #222d44;
+            --toggle-text: #f8fafc;
+            --toggle-border: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Warna Aksen Aplikasi */
+        :root {
+            --primary-blue: #3498db;
+            --primary-green: #2ecc71;
+            --primary-purple: #9b59b6;
         }
 
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-title);
-            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            padding: 40px 24px;
-            position: relative;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
             overflow-x: hidden;
         }
 
-        /* Ambient Radial Lighting */
-        .ambient-mesh {
-            position: fixed;
-            top: 25%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 800px;
-            height: 500px;
-            background: radial-gradient(circle, var(--glow-color) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 75%);
-            pointer-events: none;
-            z-index: 0;
+        /* Animasi untuk Background Gradient */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        /* Navigation Bar / Top Bar */
-        .top-bar {
-            width: 100%;
-            max-width: 1080px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-            margin-bottom: 20px;
-        }
-
-        .brand-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            color: var(--text-title);
-        }
-
-        .brand-badge .emblem-dot {
-            width: 9px;
-            height: 9px;
-            background: #6366f1;
+        /* Tombol Toggle Tema di Pojok Atas */
+        .theme-switch {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            box-shadow: 0 0 10px #6366f1;
-        }
-
-        .theme-toggle-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-desc);
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
+            background: var(--toggle-bg);
+            border: 1px solid var(--toggle-border);
+            color: var(--toggle-text);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            font-size: 17px;
+            z-index: 99;
+            transition: transform 0.25s ease, background 0.3s ease;
         }
 
-        .theme-toggle-btn:hover {
-            border-color: var(--border-hover);
-            color: var(--text-title);
-            transform: translateY(-2px);
+        .theme-switch:hover {
+            transform: scale(1.1) rotate(15deg);
         }
 
-        /* Main Portal Container */
-        .portal-container {
-            width: 100%;
-            max-width: 1080px;
-            z-index: 10;
-            margin: auto 0;
-        }
-
-        /* Hero Header */
-        .hero {
+        /* Glassmorphism Container */
+        .container {
             text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .hero h1 {
-            font-size: 34px;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, var(--text-title) 60%, var(--text-desc) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            color: var(--text-desc);
-            font-size: 15px;
-            font-weight: 400;
-            max-width: 520px;
-            margin: 0 auto 24px;
-            line-height: 1.6;
-        }
-
-        /* Raycast Spotlight Search Bar */
-        .spotlight-wrapper {
-            max-width: 460px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .spotlight-bar {
-            width: 100%;
-            background: var(--search-bg);
-            border: 1px solid var(--search-border);
+            background: var(--container-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 13px 18px 13px 44px;
-            border-radius: 14px;
-            font-size: 14px;
-            color: var(--text-title);
-            font-family: inherit;
-            outline: none;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            padding: 55px 45px;
+            border-radius: 24px;
+            border: 1px solid var(--container-border);
+            box-shadow: var(--container-shadow);
+            max-width: 840px; /* Pas untuk 3 kartu berjejer */
+            width: 95%;
+            transform: translateY(20px);
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            position: relative;
         }
 
-        .spotlight-bar:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        /* Animasi Muncul Container */
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .spotlight-wrapper .search-icon {
-            position: absolute;
-            left: 17px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-sub);
-            font-size: 14px;
+        h1 {
+            color: var(--title-color);
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
-        .spotlight-wrapper .shortcut-hint {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
+        p {
+            color: var(--desc-color);
+            font-size: 15px;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .app-links {
             display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        kbd {
-            background: var(--kbd-bg);
-            border: 1px solid var(--border);
-            color: var(--kbd-text);
-            padding: 3px 7px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            font-family: inherit;
-        }
-
-        /* App Cards Grid */
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
             gap: 22px;
-            margin-top: 36px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 28px 24px;
-            text-decoration: none;
-            color: inherit;
+        /* Styling Kartu Aplikasi */
+        .app-card {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            border-color: var(--border-hover);
-        }
-
-        /* Glow accent border hover */
-        .card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            padding: 1.5px;
-            background: transparent;
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-
-        .card.card-anggaran:hover::after {
-            background: linear-gradient(135deg, #0ea5e9, transparent 60%);
-            opacity: 1;
-        }
-        .card.card-asistensi:hover::after {
-            background: linear-gradient(135deg, #10b981, transparent 60%);
-            opacity: 1;
-        }
-        .card.card-sipd:hover::after {
-            background: linear-gradient(135deg, #8b5cf6, transparent 60%);
-            opacity: 1;
-        }
-
-        /* Top Row in Card */
-        .card-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 22px;
-        }
-
-        /* Squircle 3D App Icon */
-        .squircle-icon {
-            width: 58px;
-            height: 58px;
-            border-radius: 17px;
-            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            color: #ffffff;
-            box-shadow: 0 10px 20px -4px rgba(0,0,0,0.25);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card:hover .squircle-icon {
-            transform: scale(1.08) rotate(-2deg);
-        }
-
-        .card-anggaran .squircle-icon {
-            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
-        }
-        .card-asistensi .squircle-icon {
-            background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-        }
-        .card-sipd .squircle-icon {
-            background: linear-gradient(135deg, #a78bfa 0%, #6d28d9 100%);
-        }
-
-        /* Right Pill Hotkey */
-        .hotkey-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .hotkey-pill .key-badge {
-            background: var(--kbd-bg);
-            border: 1px solid var(--border);
-            color: var(--kbd-text);
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
-        }
-
-        /* Card Content */
-        .card-content h3 {
-            font-size: 19px;
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            margin-bottom: 8px;
-            color: var(--text-title);
-        }
-
-        .card-content p {
-            font-size: 13.5px;
-            line-height: 1.55;
-            color: var(--text-desc);
-            margin-bottom: 24px;
-        }
-
-        /* Card Footer */
-        .card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 14px;
-            border-top: 1px solid var(--border);
-            font-size: 12.5px;
+            padding: 32px 18px;
+            background: var(--card-bg);
+            color: var(--card-text);
+            text-decoration: none;
+            border-radius: 18px;
+            font-size: 15px;
             font-weight: 600;
-            color: var(--text-sub);
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 220px;
+            box-sizing: border-box;
+            border: 2px solid transparent;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
         }
 
-        .status-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11.5px;
-            color: var(--text-sub);
+        .app-card i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease;
         }
 
-        .pulse-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background-color: #10b981;
-            box-shadow: 0 0 8px #10b981;
+        /* Efek Hover: ANGGARAN (Biru) */
+        .app-card.anggaran i {
+            color: var(--primary-blue);
+        }
+        .app-card.anggaran:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 16px 28px rgba(52, 152, 219, 0.25);
         }
 
-        .action-arrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-desc);
-            transition: transform 0.2s ease, color 0.2s ease;
+        /* Efek Hover: ASISTENSI (Hijau) */
+        .app-card.asistensi i {
+            color: var(--primary-green);
+        }
+        .app-card.asistensi:hover {
+            border-color: var(--primary-green);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 16px 28px rgba(46, 204, 113, 0.25);
         }
 
-        .card:hover .action-arrow {
-            transform: translateX(4px);
-            color: var(--text-title);
+        /* Efek Hover: SIPD (Ungu) */
+        .app-card.sipd i {
+            color: var(--primary-purple);
+        }
+        .app-card.sipd:hover {
+            border-color: var(--primary-purple);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 16px 28px rgba(155, 89, 182, 0.25);
         }
 
-        /* Bottom Footer */
-        .footer {
-            width: 100%;
-            max-width: 1080px;
-            z-index: 10;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-sub);
-            padding-top: 30px;
-            border-top: 1px solid var(--border);
-            margin-top: 40px;
+        .app-card:hover i {
+            transform: scale(1.12);
         }
 
-        .footer .server-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Mobile & Responsive */
-        @media (max-width: 860px) {
-            .app-grid {
-                grid-template-columns: 1fr;
-                max-width: 440px;
-                margin: 30px auto 0;
+        /* Responsif untuk Layar HP */
+        @media (max-width: 650px) {
+            .container {
+                padding: 40px 24px;
             }
-            .hero h1 {
-                font-size: 26px;
+            .app-card {
+                width: 100%;
+                padding: 20px 22px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 20px;
             }
-            .footer {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            .app-card i {
+                margin-bottom: 0;
+                font-size: 32px;
+            }
+            .theme-switch {
+                top: 15px;
+                right: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="ambient-mesh"></div>
+    <!-- Tombol Dark / Light Mode -->
+    <button class="theme-switch" id="themeBtn" title="Ganti Mode Terang / Gelap">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+    </button>
 
-    <!-- Top Navigation Bar -->
-    <div class="top-bar">
-        <div class="brand-badge">
-            <span class="emblem-dot"></span>
-            <span>PEMERINTAH DAERAH • PORTAL KEUANGAN</span>
-        </div>
+    <div class="container">
+        <h1>Portal Aplikasi Internal</h1>
+        <p>Selamat datang! Silakan pilih aplikasi yang ingin Anda akses hari ini.</p>
         
-        <button class="theme-toggle-btn" id="themeBtn" title="Ganti Tema (Gelap / Terang)">
-            <i class="fa-solid fa-moon" id="themeIcon"></i>
-        </button>
-    </div>
-
-    <!-- Main Portal Content -->
-    <div class="portal-container">
-        <!-- Hero Header -->
-        <div class="hero">
-            <h1>Workspace Internal</h1>
-            <p>Pilih modul kerja atau tekan tombol angka <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> pada keyboard Anda untuk akses instan.</p>
-
-            <!-- Spotlight Filter / Search Bar -->
-            <div class="spotlight-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input 
-                    type="text" 
-                    class="spotlight-bar" 
-                    id="searchBar" 
-                    placeholder="Ketik untuk memfilter aplikasi..." 
-                    autocomplete="off"
-                />
-                <div class="shortcut-hint">
-                    <kbd>1-3</kbd>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3 Modern App Cards -->
-        <div class="app-grid" id="appGrid">
+        <div class="app-links">
             <!-- 1. BKAD Anggaran -->
-            <a href="/BKAD-ANGGARAN/public/" class="card card-anggaran" data-title="anggaran bkad perencanaan apbd belanja pendapatan" id="app-1">
-                <div>
-                    <div class="card-header-row">
-                        <div class="squircle-icon">
-                            <i class="fa-solid fa-chart-pie"></i>
-                        </div>
-                        <div class="hotkey-pill">
-                            <span class="key-badge">Tekan 1</span>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3>BKAD Anggaran</h3>
-                        <p>Pengelolaan struktur APBD, rekapitulasi belanja per SKPD, pendapatan, dan analisis pagu berjalan.</p>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="status-tag">
-                        <span class="pulse-dot"></span>
-                        <span>Modul Utama</span>
-                    </div>
-                    <div class="action-arrow">
-                        <span>Buka</span>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </div>
-                </div>
+            <a href="/BKAD-ANGGARAN/public/" class="app-card anggaran">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>ANGGARAN</span>
             </a>
-
+            
             <!-- 2. Asistensi RKA -->
-            <a href="/asistensi-rka/public/" class="card card-asistensi" data-title="asistensi rka verifikasi review skpd standar harga" id="app-2">
-                <div>
-                    <div class="card-header-row">
-                        <div class="squircle-icon">
-                            <i class="fa-solid fa-file-signature"></i>
-                        </div>
-                        <div class="hotkey-pill">
-                            <span class="key-badge">Tekan 2</span>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3>Asistensi RKA</h3>
-                        <p>Verifikasi rincian dokumen RKA SKPD, validasi kesesuaian standar harga, dan catatan lembar hasil asistensi.</p>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="status-tag">
-                        <span class="pulse-dot"></span>
-                        <span>Verifikasi</span>
-                    </div>
-                    <div class="action-arrow">
-                        <span>Buka</span>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </div>
-                </div>
+            <a href="/asistensi-rka/public/" class="app-card asistensi">
+                <i class="fa-solid fa-file-signature"></i>
+                <span>Asistensi RKA</span>
             </a>
 
             <!-- 3. SIPD Penganggaran -->
-            <a href="/sipd-local/public/" class="card card-sipd" data-title="sipd penganggaran snapshot posting unposting cetak rka arsip" id="app-3">
-                <div>
-                    <div class="card-header-row">
-                        <div class="squircle-icon">
-                            <i class="fa-solid fa-layer-group"></i>
-                        </div>
-                        <div class="hotkey-pill">
-                            <span class="key-badge">Tekan 3</span>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3>SIPD Penganggaran</h3>
-                        <p>Snapshot posting & unposting per tahapan APBD, sinkronisasi SIPD RI, serta cetak dokumen resmi RKA.</p>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="status-tag">
-                        <span class="pulse-dot"></span>
-                        <span>Snapshot & Arsip</span>
-                    </div>
-                    <div class="action-arrow">
-                        <span>Buka</span>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </div>
-                </div>
+            <a href="/sipd-local/public/" class="app-card sipd">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>SIPD Penganggaran</span>
             </a>
         </div>
     </div>
 
-    <!-- Bottom Bar / Footer -->
-    <div class="footer">
-        <div class="server-info">
-            <i class="fa-solid fa-server"></i>
-            <span>Windows Server 2012 • Local Environment</span>
-        </div>
-        <div id="liveClock">Memuat waktu...</div>
-    </div>
-
-    <!-- Script Logika Keyboard, Filter Search, dan Dark/Light Theme -->
+    <!-- Script Saklar Light & Dark Mode -->
     <script>
-        // 1. Theme Toggle
         const themeBtn = document.getElementById('themeBtn');
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
 
         function setTheme(theme) {
             html.setAttribute('data-theme', theme);
-            localStorage.setItem('portal-theme', theme);
-            if (theme === 'light') {
+            localStorage.setItem('user-portal-theme', theme);
+            if (theme === 'dark') {
                 themeIcon.className = 'fa-solid fa-sun';
             } else {
                 themeIcon.className = 'fa-solid fa-moon';
             }
         }
 
-        const savedTheme = localStorage.getItem('portal-theme') || 'dark';
+        // Baca preferensi yang tersimpan atau default ke Light
+        const savedTheme = localStorage.getItem('user-portal-theme') || 'light';
         setTheme(savedTheme);
 
         themeBtn.addEventListener('click', () => {
             const current = html.getAttribute('data-theme');
-            setTheme(current === 'dark' ? 'light' : 'dark');
+            setTheme(current === 'light' ? 'dark' : 'light');
         });
-
-        // 2. Keyboard Navigation (1, 2, 3)
-        window.addEventListener('keydown', (e) => {
-            // Abaikan jika user sedang mengetik di kotak pencarian
-            if (document.activeElement === document.getElementById('searchBar')) return;
-
-            if (e.key === '1') {
-                triggerApp(document.getElementById('app-1'));
-            } else if (e.key === '2') {
-                triggerApp(document.getElementById('app-2'));
-            } else if (e.key === '3') {
-                triggerApp(document.getElementById('app-3'));
-            } else if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
-                e.preventDefault();
-                document.getElementById('searchBar').focus();
-            }
-        });
-
-        function triggerApp(cardElement) {
-            if (!cardElement) return;
-            cardElement.style.transform = 'scale(0.97)';
-            setTimeout(() => {
-                window.location.href = cardElement.href;
-            }, 120);
-        }
-
-        // 3. Instant Search Filtering
-        const searchBar = document.getElementById('searchBar');
-        const cards = document.querySelectorAll('.card');
-
-        searchBar.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase().trim();
-            cards.forEach(card => {
-                const text = card.getAttribute('data-title') + ' ' + card.innerText.toLowerCase();
-                if (text.includes(q)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
-
-        // 4. Real-time Digital Clock
-        function updateClock() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            document.getElementById('liveClock').innerText = `${dateStr} • ${timeStr} WIB`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
     </script>
 </body>
 </html>
