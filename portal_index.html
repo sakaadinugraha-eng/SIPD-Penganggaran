@@ -1,295 +1,596 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="light">
+<html lang="id" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Aplikasi Internal</title>
+    <title>Portal Aplikasi Keuangan & Perencanaan Daerah</title>
     
-    <!-- Import Google Fonts: Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Import FontAwesome untuk Icon -->
+    <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* === VARIABEL TEMA LIGHT (DEFAULT) === */
-        :root[data-theme="light"] {
-            --bg-gradient: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            --container-bg: rgba(255, 255, 255, 0.85);
-            --container-border: rgba(255, 255, 255, 0.4);
-            --container-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
-            --card-bg: #ffffff;
-            --card-text: #2c3e50;
-            --card-shadow: 0 8px 22px rgba(0, 0, 0, 0.05);
-            --title-color: #2c3e50;
-            --desc-color: #7f8c8d;
-            --toggle-bg: #ffffff;
-            --toggle-text: #2c3e50;
-            --toggle-border: rgba(0, 0, 0, 0.1);
-        }
-
-        /* === VARIABEL TEMA DARK === */
+        /* =========================================================
+           1. DESIGN TOKENS (LIGHT & DARK THEMES)
+           ========================================================= */
         :root[data-theme="dark"] {
-            --bg-gradient: linear-gradient(-45deg, #090d16, #1a1636, #0d2238, #0b1a20);
-            --container-bg: rgba(16, 22, 36, 0.85);
-            --container-border: rgba(255, 255, 255, 0.1);
-            --container-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-            --card-bg: #182032;
-            --card-text: #f1f5f9;
-            --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-            --title-color: #f8fafc;
-            --desc-color: #94a3b8;
-            --toggle-bg: #222d44;
-            --toggle-text: #f8fafc;
-            --toggle-border: rgba(255, 255, 255, 0.15);
+            --bg-base: #07090e;
+            --surface: rgba(16, 22, 36, 0.75);
+            --surface-hover: rgba(22, 30, 50, 0.9);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.22);
+            --grid-line: rgba(255, 255, 255, 0.025);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-sub: #64748b;
+            
+            --blue: #38bdf8;
+            --blue-glow: rgba(56, 189, 248, 0.18);
+            --emerald: #34d399;
+            --emerald-glow: rgba(52, 211, 153, 0.18);
+            --purple: #c084fc;
+            --purple-glow: rgba(192, 132, 252, 0.18);
+            
+            --ambient-1: rgba(56, 189, 248, 0.08);
+            --ambient-2: rgba(192, 132, 252, 0.07);
+            --toggle-bg: rgba(255, 255, 255, 0.06);
+            --toggle-border: rgba(255, 255, 255, 0.12);
+            --toggle-color: #f8fafc;
+            --kbd-bg: rgba(255, 255, 255, 0.08);
+            --kbd-border: rgba(255, 255, 255, 0.12);
+            --badge-bg: rgba(255, 255, 255, 0.05);
+            --card-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5);
         }
 
-        /* Warna Aksen Aplikasi */
-        :root {
-            --primary-blue: #3498db;
-            --primary-green: #2ecc71;
-            --primary-purple: #9b59b6;
+        :root[data-theme="light"] {
+            --bg-base: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-hover: #ffffff;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --grid-line: rgba(0, 0, 0, 0.03);
+            
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-sub: #94a3b8;
+            
+            --blue: #0284c7;
+            --blue-glow: rgba(2, 132, 199, 0.14);
+            --emerald: #059669;
+            --emerald-glow: rgba(5, 150, 105, 0.14);
+            --purple: #7c3aed;
+            --purple-glow: rgba(124, 58, 237, 0.14);
+            
+            --ambient-1: rgba(56, 189, 248, 0.1);
+            --ambient-2: rgba(192, 132, 252, 0.08);
+            --toggle-bg: #ffffff;
+            --toggle-border: #cbd5e1;
+            --toggle-color: #0f172a;
+            --kbd-bg: #f1f5f9;
+            --kbd-border: #e2e8f0;
+            --badge-bg: #f1f5f9;
+            --card-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.08);
         }
 
         * {
             box-sizing: border-box;
-            transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.35s ease, border-color 0.3s ease, color 0.3s ease;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-gradient);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
+            position: relative;
             overflow-x: hidden;
         }
 
-        /* Animasi untuk Background Gradient */
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Subtle Geometric Background Grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+            pointer-events: none;
+            z-index: 0;
         }
 
-        /* Tombol Toggle Tema di Pojok Atas */
-        .theme-switch {
+        /* Dynamic Ambient Lighting */
+        .ambient-glow {
+            position: fixed;
+            width: 750px;
+            height: 650px;
+            background: radial-gradient(circle, var(--ambient-1) 0%, var(--ambient-2) 45%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(40px);
+        }
+
+        /* Floating Theme Switcher Button */
+        .theme-toggle {
             position: absolute;
             top: 25px;
             right: 25px;
             width: 44px;
             height: 44px;
-            border-radius: 50%;
+            border-radius: 14px;
             background: var(--toggle-bg);
             border: 1px solid var(--toggle-border);
-            color: var(--toggle-text);
+            color: var(--toggle-color);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-            font-size: 17px;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
             z-index: 99;
             transition: transform 0.25s ease, background 0.3s ease;
         }
 
-        .theme-switch:hover {
-            transform: scale(1.1) rotate(15deg);
+        .theme-toggle:hover {
+            transform: scale(1.08) rotate(10deg);
         }
 
-        /* Glassmorphism Container */
-        .container {
-            text-align: center;
-            background: var(--container-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 55px 45px;
-            border-radius: 24px;
-            border: 1px solid var(--container-border);
-            box-shadow: var(--container-shadow);
-            max-width: 840px; /* Pas untuk 3 kartu berjejer */
-            width: 95%;
-            transform: translateY(20px);
-            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
+        /* Main Content Container */
+        .portal-wrapper {
             position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1120px;
+            margin: auto;
         }
 
-        /* Animasi Muncul Container */
-        @keyframes fadeUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 45px;
         }
 
-        h1 {
-            color: var(--title-color);
+        .agency-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 16px;
+            background: var(--badge-bg);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(8px);
+            border-radius: 999px;
+            font-size: 12px;
             font-weight: 700;
-            font-size: 28px;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
 
-        p {
-            color: var(--desc-color);
+        .agency-badge i {
+            font-size: 13px;
+        }
+
+        .header h1 {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-muted);
             font-size: 15px;
-            margin-bottom: 40px;
-            font-weight: 400;
+            max-width: 580px;
+            margin: 0 auto 16px;
+            line-height: 1.6;
         }
 
-        .app-links {
-            display: flex;
-            gap: 22px;
-            justify-content: center;
-            flex-wrap: wrap;
+        .datetime-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--text-sub);
+            font-weight: 500;
+            background: var(--badge-bg);
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
         }
 
-        /* Styling Kartu Aplikasi */
-        .app-card {
+        /* App Grid */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        /* App Card with Glassmorphism */
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 34px 28px;
+            text-decoration: none;
+            color: inherit;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 18px;
-            background: var(--card-bg);
-            color: var(--card-text);
-            text-decoration: none;
-            border-radius: 18px;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 220px;
-            box-sizing: border-box;
-            border: 2px solid transparent;
-            box-shadow: var(--card-shadow);
+            justify-content: space-between;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
+            box-shadow: var(--card-shadow);
         }
 
-        .app-card i {
-            font-size: 40px;
-            margin-bottom: 16px;
-            transition: transform 0.3s ease;
+        /* Top Accent Highlight on Hover */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            opacity: 0;
+            transition: opacity 0.35s ease;
         }
 
-        /* Efek Hover: ANGGARAN (Biru) */
-        .app-card.anggaran i {
-            color: var(--primary-blue);
+        .card.anggaran::before {
+            background: linear-gradient(90deg, transparent, var(--blue), transparent);
         }
-        .app-card.anggaran:hover {
-            border-color: var(--primary-blue);
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 0 16px 28px rgba(52, 152, 219, 0.25);
+        .card.asistensi::before {
+            background: linear-gradient(90deg, transparent, var(--emerald), transparent);
         }
-
-        /* Efek Hover: ASISTENSI (Hijau) */
-        .app-card.asistensi i {
-            color: var(--primary-green);
-        }
-        .app-card.asistensi:hover {
-            border-color: var(--primary-green);
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 0 16px 28px rgba(46, 204, 113, 0.25);
+        .card.sipd::before {
+            background: linear-gradient(90deg, transparent, var(--purple), transparent);
         }
 
-        /* Efek Hover: SIPD (Ungu) */
-        .app-card.sipd i {
-            color: var(--primary-purple);
-        }
-        .app-card.sipd:hover {
-            border-color: var(--primary-purple);
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 0 16px 28px rgba(155, 89, 182, 0.25);
+        /* Card Hover Effects */
+        .card:hover {
+            transform: translateY(-8px);
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.25);
         }
 
-        .app-card:hover i {
-            transform: scale(1.12);
+        .card:hover::before {
+            opacity: 1;
         }
 
-        /* Responsif untuk Layar HP */
-        @media (max-width: 650px) {
-            .container {
-                padding: 40px 24px;
+        /* Card Header Elements */
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        /* Icon Box */
+        .icon-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .card:hover .icon-box {
+            transform: scale(1.1) rotate(-3deg);
+        }
+
+        .card.anggaran .icon-box {
+            background: var(--blue-glow);
+            color: var(--blue);
+            border: 1px solid rgba(56, 189, 248, 0.28);
+        }
+
+        .card.asistensi .icon-box {
+            background: var(--emerald-glow);
+            color: var(--emerald);
+            border: 1px solid rgba(52, 211, 153, 0.28);
+        }
+
+        .card.sipd .icon-box {
+            background: var(--purple-glow);
+            color: var(--purple);
+            border: 1px solid rgba(192, 132, 252, 0.28);
+        }
+
+        /* Badges & Hotkey Pills */
+        .card-badges-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-badge {
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--badge-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .kbd-key {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 6px;
+            background: var(--kbd-bg);
+            border: 1px solid var(--kbd-border);
+            color: var(--text-sub);
+        }
+
+        /* Card Content */
+        .card-body h3 {
+            font-size: 21px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 9px;
+            letter-spacing: -0.02em;
+        }
+
+        .card-body p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        /* Card Footer */
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13.5px;
+            font-weight: 600;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .card.anggaran:hover .card-footer { color: var(--blue); }
+        .card.asistensi:hover .card-footer { color: var(--emerald); }
+        .card.sipd:hover .card-footer { color: var(--purple); }
+
+        .arrow-icon {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .card:hover .arrow-icon {
+            transform: translateX(6px);
+        }
+
+        /* Bottom Footer Status */
+        .footer-status {
+            text-align: center;
+            margin-top: 48px;
+            font-size: 12.5px;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--emerald);
+            box-shadow: 0 0 10px var(--emerald);
+            display: inline-block;
+        }
+
+        /* Responsive Mobile & Tablet */
+        @media (max-width: 900px) {
+            .apps-grid {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                margin: 0 auto;
             }
-            .app-card {
-                width: 100%;
-                padding: 20px 22px;
-                flex-direction: row;
-                justify-content: flex-start;
-                gap: 20px;
+            .header h1 {
+                font-size: 27px;
             }
-            .app-card i {
-                margin-bottom: 0;
-                font-size: 32px;
-            }
-            .theme-switch {
-                top: 15px;
-                right: 15px;
+            .theme-toggle {
+                top: 16px;
+                right: 16px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Tombol Dark / Light Mode -->
-    <button class="theme-switch" id="themeBtn" title="Ganti Mode Terang / Gelap">
+    <!-- Tombol Saklar Tema Dark / Light -->
+    <button class="theme-toggle" id="themeBtn" title="Ganti Mode Terang / Gelap">
         <i class="fa-solid fa-moon" id="themeIcon"></i>
     </button>
 
-    <div class="container">
-        <h1>Portal Aplikasi Internal</h1>
-        <p>Selamat datang! Silakan pilih aplikasi yang ingin Anda akses hari ini.</p>
-        
-        <div class="app-links">
+    <!-- Background Elements -->
+    <div class="bg-grid"></div>
+    <div class="ambient-glow"></div>
+
+    <div class="portal-wrapper">
+        <!-- Header -->
+        <div class="header">
+            <div class="agency-badge">
+                <i class="fa-solid fa-landmark"></i>
+                Pemerintah Daerah
+            </div>
+            <h1>Portal Aplikasi Internal</h1>
+            <p>Pilih sistem yang ingin Anda akses atau tekan tombol angka [ 1, 2, 3 ] pada keyboard untuk akses instan.</p>
+            <div class="datetime-pill" id="live-time">
+                <i class="fa-regular fa-clock"></i> Memuat waktu...
+            </div>
+        </div>
+
+        <!-- 3 Cards -->
+        <div class="apps-grid">
             <!-- 1. BKAD Anggaran -->
-            <a href="/BKAD-ANGGARAN/public/" class="app-card anggaran">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>ANGGARAN</span>
+            <a href="/BKAD-ANGGARAN/public/" class="card anggaran" id="app-1">
+                <div>
+                    <div class="card-top">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <div class="card-badges-wrapper">
+                            <span class="card-badge">Modul Utama</span>
+                            <span class="kbd-key">1</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>BKAD Anggaran</h3>
+                        <p>Pengelolaan struktur APBD, rekapitulasi pagu belanja SKPD, pendapatan, serta analisis data anggaran daerah.</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span>Akses Aplikasi</span>
+                    <i class="fa-solid fa-arrow-right arrow-icon"></i>
+                </div>
             </a>
-            
+
             <!-- 2. Asistensi RKA -->
-            <a href="/asistensi-rka/public/" class="app-card asistensi">
-                <i class="fa-solid fa-file-signature"></i>
-                <span>Asistensi RKA</span>
+            <a href="/asistensi-rka/public/" class="card asistensi" id="app-2">
+                <div>
+                    <div class="card-top">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                        <div class="card-badges-wrapper">
+                            <span class="card-badge">Verifikasi SKPD</span>
+                            <span class="kbd-key">2</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Asistensi RKA</h3>
+                        <p>Pemeriksaan dan review rincian RKA SKPD, verifikasi standar harga, serta pencatatan lembar hasil asistensi.</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span>Akses Aplikasi</span>
+                    <i class="fa-solid fa-arrow-right arrow-icon"></i>
+                </div>
             </a>
 
             <!-- 3. SIPD Penganggaran -->
-            <a href="/sipd-local/public/" class="app-card sipd">
-                <i class="fa-solid fa-layer-group"></i>
-                <span>SIPD Penganggaran</span>
+            <a href="/sipd-local/public/" class="card sipd" id="app-3">
+                <div>
+                    <div class="card-top">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div class="card-badges-wrapper">
+                            <span class="card-badge">Snapshot & Cetak</span>
+                            <span class="kbd-key">3</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>SIPD Penganggaran</h3>
+                        <p>Sinkronisasi data SIPD RI, arsip snapshot tahapan (posting & unposting), serta cetak dokumen resmi RKA.</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span>Akses Aplikasi</span>
+                    <i class="fa-solid fa-arrow-right arrow-icon"></i>
+                </div>
             </a>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-status">
+            <span><span class="status-dot"></span> Server Lokal Online</span>
+            <span>•</span>
+            <span>Lingkungan Windows Server</span>
         </div>
     </div>
 
-    <!-- Script Saklar Light & Dark Mode -->
+    <!-- Script Jam, Saklar Tema & Navigasi Keyboard -->
     <script>
+        // 1. Script Jam & Tanggal Otomatis (WIB)
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('live-time').innerHTML = `<i class="fa-regular fa-clock"></i> ${dateStr} — ${timeStr} WIB`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 2. Saklar Tema (Dark / Light) dengan Animasi Halus
         const themeBtn = document.getElementById('themeBtn');
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
 
         function setTheme(theme) {
             html.setAttribute('data-theme', theme);
-            localStorage.setItem('user-portal-theme', theme);
-            if (theme === 'dark') {
+            localStorage.setItem('portal-theme-pref', theme);
+            if (theme === 'light') {
                 themeIcon.className = 'fa-solid fa-sun';
             } else {
                 themeIcon.className = 'fa-solid fa-moon';
             }
         }
 
-        // Baca preferensi yang tersimpan atau default ke Light
-        const savedTheme = localStorage.getItem('user-portal-theme') || 'light';
+        const savedTheme = localStorage.getItem('portal-theme-pref') || 'dark';
         setTheme(savedTheme);
 
         themeBtn.addEventListener('click', () => {
             const current = html.getAttribute('data-theme');
-            setTheme(current === 'light' ? 'dark' : 'light');
+            setTheme(current === 'dark' ? 'light' : 'dark');
         });
+
+        // 3. Akses Cepat via Tombol Angka Keyboard (1, 2, 3)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '1') {
+                triggerApp(document.getElementById('app-1'));
+            } else if (e.key === '2') {
+                triggerApp(document.getElementById('app-2'));
+            } else if (e.key === '3') {
+                triggerApp(document.getElementById('app-3'));
+            }
+        });
+
+        function triggerApp(el) {
+            if (!el) return;
+            el.style.transform = 'scale(0.97)';
+            setTimeout(() => {
+                window.location.href = el.href;
+            }, 120);
+        }
     </script>
 </body>
 </html>
