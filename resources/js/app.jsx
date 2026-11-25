@@ -1,5 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+
+// Global fetch interceptor to automatically support subfolder deployments (e.g. http://10.50.2.10/sipd-local/public/)
+(function() {
+  const originalFetch = window.fetch;
+  function getBaseUrl() {
+    const path = window.location.pathname;
+    const publicIdx = path.indexOf('/public');
+    if (publicIdx !== -1) {
+      return path.substring(0, publicIdx + 7); // returns e.g. "/sipd-local/public"
+    }
+    if (window.__APP_BASE__ && !window.__APP_BASE__.includes('127.0.0.1:8000')) {
+      return window.__APP_BASE__.replace(/\/+$/, '');
+    }
+    return '';
+  }
+
+  window.fetch = function(input, init) {
+    const base = getBaseUrl();
+    if (base) {
+      if (typeof input === 'string' && input.startsWith('/api')) {
+        input = base + input;
+      }
+    }
+    return originalFetch.call(this, input, init);
+  };
+})();
+
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
