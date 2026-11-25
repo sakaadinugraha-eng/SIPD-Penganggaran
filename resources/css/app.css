@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+@source '../views/**/*.blade.php';
+@source '../js/**/*.{js,jsx,ts,tsx}';
+
+@theme {
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@page {
+    size: A4 landscape;
+    margin: 8mm 10mm;
+}
+
+@media print {
+    aside, nav, footer, .print-hidden {
+        display: none !important;
+    }
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+    body {
+        background: white !important;
+    }
+}
