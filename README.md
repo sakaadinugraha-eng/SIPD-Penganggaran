@@ -1,58 +1,167 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIPD-Penganggaran 🏛️📊
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **Sistem Informasi Manajemen, Analisis, dan Arsip Snapshot Data Penganggaran APBD (SIPD RI)**
 
-## About Laravel
+Aplikasi berbasis web untuk mengelola, menganalisis, dan membekukan (*snapshot posting*) data penganggaran daerah (APBD) dari SIPD RI Kemendagri. Dilengkapi dengan pengelolaan Belanja SKPD, Rincian Komponen RKA, Pendapatan, Pembiayaan, serta fitur Cetak RKA standar A4 Landscape.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Fitur Unggulan
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Dashboard Ringkasan APBD Real-Time
+- Visualisasi metrik keuangan utama: **Total Belanja**, **Total Pendapatan**, **Pembiayaan Netto** (Penerimaan vs Pengeluaran), dan status **Surplus / (Defisit)**.
+- Filter dinamis berdasarkan Tahun Anggaran (misal: TA 2027) dan SKPD.
 
-## Learning Laravel
+### 2. Modul Belanja & Rincian RKA SKPD
+- Navigasi bertingkat: **Program ➔ Kegiatan ➔ Sub Kegiatan ➔ Rekening Belanja ➔ Rincian Komponen**.
+- Informasi detail per komponen: Standar harga, koefisien, volume, satuan, dan total pagu.
+- Fitur **Cetak RKA Resmi**: Tampilan cetak standar lampiran anggaran dalam format **A4 Landscape** dengan layout yang rapi dan siap cetak.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 3. Modul Pendapatan & Pembiayaan
+- Monitoring akun pendapatan daerah beserta rincian target.
+- Pengelolaan data pembiayaan (Penerimaan Pembiayaan / SiLPA dan Pengeluaran Pembiayaan).
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 4. Manajemen Snapshot: Posting & Unposting Data
+- **Posting Data**: Membekukan (*freeze snapshot*) kondisi data aktif berjalan ke dalam arsip resmi per tahapan anggaran.
+- **Tahapan Anggaran Dinamis**: Tambah dan kelola tahapan anggaran (misal: *Rancangan Awal*, *Rancangan*, *RKA SKPD*, *Persetujuan Bersama*, *Penetapan APBD*, *Perubahan APBD*) secara fleksibel.
+- **Posting Explorer**: Jelajahi data historis/arsip postingan hingga ke level detail sub-kegiatan, rincian komponen RKA, dan cetak RKA arsip.
+- **Tindih & Unposting**:
+  - *Tindih*: Memperbarui data snapshot yang sudah ada dengan data aktif terkini.
+  - *Unposting*: Memulihkan (*restore*) data arsip snapshot kembali menjadi data aktif berjalan dengan aman.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 5. Notifikasi Interaktif
+- Terintegrasi penuh dengan **React Hot Toast** untuk setiap aksi pengguna (tambah, edit, hapus, posting, unposting, sinkronisasi data).
 
-## Agentic Development
+### 6. User Management & Keamanan
+- Autentikasi berbasis session dengan pembagian hak akses (Developer, Administrator, User).
+- Manajemen pengguna terpadu.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
 
+## 🛠️ Tech Stack
+
+- **Backend:** [Laravel 11](https://laravel.com/) (PHP 8.2+)
+- **Frontend:** [React 18](https://react.dev/), [Vite](https://vitejs.dev/)
+- **UI & Styling:** [Tailwind CSS](https://tailwindcss.com/), [Lucide React Icons](https://lucide.dev/)
+- **Notifications:** [React Hot Toast](https://react-hot-toast.com/)
+- **Database:** [MySQL](https://www.mysql.com/) / [MariaDB](https://mariadb.org/)
+
+---
+
+## 💻 Panduan Instalasi (Development Lokal)
+
+### Prasyarat
+- PHP >= 8.2
+- Composer
+- Node.js & NPM
+- MySQL / MariaDB (disarankan menggunakan Laragon / XAMPP)
+
+### Langkah-langkah
+
+1. **Clone Repositori**
+   ```bash
+   git clone https://github.com/sakaadinugraha-eng/SIPD-Penganggaran.git
+   cd SIPD-Penganggaran
+   ```
+
+2. **Install Dependensi Backend & Frontend**
+   ```bash
+   composer install
+   npm install
+   ```
+
+3. **Konfigurasi Environment**
+   Salin file `.env.example` menjadi `.env`:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   Sesuaikan konfigurasi database pada `.env`:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=sipd_local
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+
+4. **Migrasi Database**
+   ```bash
+   php artisan migrate
+   ```
+
+5. **Jalankan Aplikasi**
+   - Jalankan Vite development server:
+     ```bash
+     npm run dev
+     ```
+   - Buka aplikasi melalui local domain Laragon (misal: `http://sipd-local.test`) atau jalankan server lokal:
+     ```bash
+     php artisan serve
+     ```
+
+---
+
+## 🖥️ Panduan Deployment (Windows Server 2012 / Lingkungan Tanpa CLI)
+
+Repositori ini telah disiapkan khusus untuk server produksi Windows Server yang **tidak memiliki / tidak dapat menjalankan `npm` dan `php artisan`**.
+
+### 1. Build Aset di Komputer Lokal
+Seluruh aset frontend di-compile secara lokal ke folder `public/build` dan disimpan di repositori Git.
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+npm run build
+git add .
+git commit -m "build: compile assets"
+git push origin main
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Tarik Update di Windows Server
+Pada Windows Server, buka Git Bash / Command Prompt di folder instalasi:
+```bash
+git pull origin main
+```
+*Aset antarmuka React langsung aktif otomatis tanpa perlu instalasi Node.js di server.*
 
-## Contributing
+### 3. Eksekusi Skrip Database di Server
+Jika server tidak dapat menjalankan `php artisan migrate`, gunakan skrip SQL siap pakai:
+- Lokasi file: `database/update_server_posting.sql`
+- Buka **phpMyAdmin**, **HeidiSQL**, atau **Navicat** di server.
+- Impor atau jalankan (*Execute*) isi file `database/update_server_posting.sql` ke database target.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 📂 Struktur Direktori Utama
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```text
+SIPD-Penganggaran/
+├── app/
+│   ├── Http/Controllers/
+│   │   ├── PostingController.php       # Logika snapshot posting, unposting & tahapan
+│   │   ├── RkaController.php           # Logika sub kegiatan, rincian RKA & cetak
+│   │   ├── PendapatanController.php    # Modul pendapatan
+│   │   ├── PembiayaanController.php    # Modul pembiayaan (SiLPA)
+│   │   └── UserController.php          # Manajemen user & auth
+│   └── Models/                         # Eloquent Model (PostingSession, Rka, SubKeg, dll.)
+├── database/
+│   ├── migrations/                     # File migrasi Laravel
+│   └── update_server_posting.sql       # Skrip SQL siap eksekusi di server produksi
+├── public/
+│   └── build/                          # Bundled & compiled assets (Vite React & Tailwind)
+├── resources/
+│   ├── css/app.css                     # Tailwind custom styling
+│   └── js/
+│       ├── components/                 # Navbar, Sidebar, Modal, dll.
+│       ├── pages/                      # PostingData, PostingExplorer, RkaPrintView, dll.
+│       └── App.jsx                     # Router utama & Provider Notifikasi
+└── routes/
+    └── web.php                         # Routing aplikasi & API endpoints internal
+```
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 📝 Lisensi
 
-## License
+Aplikasi ini dikembangkan untuk kebutuhan internal pengelolaan dan analisis data perencanaan anggaran daerah.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Dikelola oleh [@sakaadinugraha-eng](https://github.com/sakaadinugraha-eng).
