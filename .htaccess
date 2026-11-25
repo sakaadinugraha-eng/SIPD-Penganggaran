@@ -1,5 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Mencegah Apache me-redirect URL ke /public/
+    RewriteRule ^$ public/index.php [L]
+
+    # Jika request bukan ke /public/, teruskan ke dalam folder public secara internal
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
