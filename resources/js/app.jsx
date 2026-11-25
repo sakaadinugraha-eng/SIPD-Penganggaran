@@ -10,6 +10,10 @@ import { createRoot } from 'react-dom/client';
     if (publicIdx !== -1) {
       return path.substring(0, publicIdx + 7); // returns e.g. "/sipd-local/public"
     }
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length > 0 && segments[0] !== 'api') {
+      return '/' + segments[0]; // returns e.g. "/sipd-local" (tanpa /public)
+    }
     if (window.__APP_BASE__ && !window.__APP_BASE__.includes('127.0.0.1:8000')) {
       return window.__APP_BASE__.replace(/\/+$/, '');
     }
