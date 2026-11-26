@@ -1112,6 +1112,73 @@ class DataManagementController extends Controller
     }
 
     /**
+     * Ambil daftar Master SKPD & Kepala SKPD (data_unit) dengan filter dan pagination
+     */
+    public function getMasterSkpd(Request $request)
+    {
+        $search = $request->input('search');
+        $tahun = $request->input('tahun_anggaran');
+        $jenis = $request->input('jenis', 'all'); // 'all' | 'induk' | 'unit'
+        $perPage = (int) $request->input('per_page', 50);
+
+        $query = DataUnit::where('active', 1);
+
+        if ($tahun && $tahun !== 'all') {
+            $query->where('tahun_anggaran', (int) $tahun);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_skpd', 'like', "%{$search}%")
+                  ->orWhere('nama_skpd', 'like', "%{$search}%")
+                  ->orWhere('nama_kepala', 'like', "%{$search}%")
+                  ->orWhere('nip_kepala', 'like', "%{$search}%");
+            });
+        }
+
+        if ($jenis === 'induk') {
+            $query->where('is_skpd', 1);
+        } elseif ($jenis === 'unit') {
+            $query->where('is_skpd', 0);
+        }
+
+        $data = $query->orderBy('kode_skpd')->orderBy('id_skpd')->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Perbarui data Kepala SKPD (nama, NIP, pangkat, status) pada data_unit
+     */
+    public function updateMasterSkpd(Request $request, $id)
+    {
+        $unit = DataUnit::findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_kepala' => 'nullable|string|max:255',
+            'nip_kepala' => 'nullable|string|max:100',
+            'pangkat_kepala' => 'nullable|string|max:255',
+            'status_kepala' => 'nullable|string|max:100',
+        ]);
+
+        $unit->update([
+            'nama_kepala' => $validated['nama_kepala'] !== '' ? $validated['nama_kepala'] : null,
+            'nip_kepala' => $validated['nip_kepala'] !== '' ? $validated['nip_kepala'] : null,
+            'pangkat_kepala' => $validated['pangkat_kepala'] !== '' ? $validated['pangkat_kepala'] : null,
+            'status_kepala' => $validated['status_kepala'] !== '' ? $validated['status_kepala'] : null,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Data Kepala {$unit->nama_skpd} berhasil diperbarui.",
+            'data' => $unit,
+        ]);
+    }
+
+    /**
      * Export 4 tabel utama Belanja & RKA menjadi file .sql yang kompatibel dengan fitur Import SQL
      */
     public function exportSql(Request $request, SqlExportService $exporter)

@@ -43,6 +43,7 @@ import UserManagement from './pages/UserManagement';
 import RkaPrintView from './pages/RkaPrintView';
 import MasterAkun from './pages/MasterAkun';
 import MasterSumberDana from './pages/MasterSumberDana';
+import MasterSkpd from './pages/MasterSkpd';
 import Pendapatan from './pages/Pendapatan';
 import Pembiayaan from './pages/Pembiayaan';
 import PostingData from './pages/PostingData';
@@ -312,6 +313,10 @@ function App() {
 
               {activeTab === 'posting' && (
                 <PostingData tahunAnggaran={tahunAnggaran} />
+              )}
+
+              {activeTab === 'master-skpd' && (
+                <MasterSkpd tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'master-akun' && (

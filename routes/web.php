@@ -28,6 +28,8 @@ Route::prefix('api')->group(function () {
     Route::get('/data/rka-print/{id}', [DataManagementController::class, 'getRkaPrintData']);
     Route::get('/data/master-akun', [DataManagementController::class, 'getMasterAkun']);
     Route::get('/data/sumber-dana', [DataManagementController::class, 'getSumberDana']);
+    Route::get('/data/master-skpd', [DataManagementController::class, 'getMasterSkpd']);
+    Route::put('/data/master-skpd/{id}', [DataManagementController::class, 'updateMasterSkpd']);
     Route::get('/data/pendapatan', [DataManagementController::class, 'getPendapatan']);
     Route::get('/data/pendapatan/skpd', [DataManagementController::class, 'getPendapatanSkpdList']);
     Route::get('/data/pembiayaan', [DataManagementController::class, 'getPembiayaan']);

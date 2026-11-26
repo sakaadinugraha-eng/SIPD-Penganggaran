@@ -747,21 +747,26 @@ class SipdSyncController extends Controller
             $idSkpd = $u['id_skpd'] ?? null;
             if (!$idSkpd) continue;
 
+            $namaKepala = $u['nama_kepala'] ?? $u['namakepala'] ?? null;
+            $nipKepala = $u['nip_kepala'] ?? $u['nipkepala'] ?? null;
+            $pangkatKepala = $u['pangkat_kepala'] ?? $u['pangkatkepala'] ?? null;
+            $statusKepala = $u['status_kepala'] ?? $u['statuskepala'] ?? null;
+
             $rows[] = [
                 'id_skpd' => (int) $idSkpd,
                 'id_unit' => !empty($u['id_unit']) ? (int) $u['id_unit'] : null,
                 'kode_skpd' => (string) ($u['kode_skpd'] ?? ''),
-                'nama_skpd' => (string) ($u['nama_skpd'] ?? ''),
-                'nama_kepala' => isset($u['nama_kepala']) ? (string) $u['nama_kepala'] : null,
-                'nip_kepala' => isset($u['nip_kepala']) ? (string) $u['nip_kepala'] : null,
-                'pangkat_kepala' => isset($u['pangkat_kepala']) ? (string) $u['pangkat_kepala'] : null,
-                'status_kepala' => isset($u['status_kepala']) ? (string) $u['status_kepala'] : null,
-                'is_skpd' => (int) ($u['is_skpd'] ?? 1),
-                'is_pendapatan' => (int) ($u['is_pendapatan'] ?? 0),
+                'nama_skpd' => (string) ($u['nama_skpd'] ?? $u['namaunit'] ?? ''),
+                'nama_kepala' => ($namaKepala !== null && $namaKepala !== '') ? (string) $namaKepala : null,
+                'nip_kepala' => ($nipKepala !== null && $nipKepala !== '') ? (string) $nipKepala : null,
+                'pangkat_kepala' => ($pangkatKepala !== null && $pangkatKepala !== '') ? (string) $pangkatKepala : null,
+                'status_kepala' => ($statusKepala !== null && $statusKepala !== '') ? (string) $statusKepala : null,
+                'is_skpd' => (int) ($u['is_skpd'] ?? $u['isskpd'] ?? 1),
+                'is_pendapatan' => (int) ($u['is_pendapatan'] ?? $u['ispendapatan'] ?? 0),
                 'is_pembiayaan' => (int) ($u['is_pembiayaan'] ?? 0),
                 'id_kecamatan' => !empty($u['id_kecamatan']) ? (int) $u['id_kecamatan'] : null,
-                'nama_kecamatan' => isset($u['nama_kecamatan']) ? (string) $u['nama_kecamatan'] : null,
-                'nama_induk' => isset($u['nama_induk']) ? (string) $u['nama_induk'] : null,
+                'nama_kecamatan' => isset($u['nama_kecamatan']) && $u['nama_kecamatan'] !== '' ? (string) $u['nama_kecamatan'] : null,
+                'nama_induk' => isset($u['nama_induk']) && $u['nama_induk'] !== '' ? (string) $u['nama_induk'] : null,
                 'kepala_saja' => (int) ($u['kepala_saja'] ?? 0),
                 'tahun_anggaran' => (int) ($u['tahun_anggaran'] ?? $tahun),
                 'active' => 1,

@@ -24,8 +24,9 @@ import {
 
 export default function Sidebar({ activeTab, setActiveTab, user, onLogout, collapsed, setCollapsed }) {
   const [penganggaranOpen, setPenganggaranOpen] = useState(true);
+  const settingsTabIds = ['master-skpd', 'master-akun', 'sumber-dana', 'import-db', 'users', 'kosongkan'];
   const [settingsOpen, setSettingsOpen] = useState(
-    activeTab === 'users' || activeTab === 'kosongkan' || activeTab === 'import-db'
+    settingsTabIds.includes(activeTab)
   );
 
   const mainMenuItems = [
@@ -39,23 +40,21 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, colla
     { id: 'posting', label: 'Posting Data', icon: BookmarkCheck },
   ];
 
-  const masterMenuItems = [
+  const settingsSubItems = [
+    { id: 'master-skpd', label: 'Master SKPD', icon: Building2 },
     { id: 'master-akun', label: 'Master Akun', icon: Receipt },
     { id: 'sumber-dana', label: 'Sumber Dana', icon: Coins },
-  ];
-
-  const settingsSubItems = [
     { id: 'import-db', label: 'Import & Export DB', icon: Upload },
     { id: 'users', label: 'Atur Users', icon: Users },
     { id: 'kosongkan', label: 'Pembersihan Data', icon: Trash2, danger: true },
   ];
 
   const isPenganggaranActive = activeTab === 'skpd' || activeTab === 'subkegiatan' || activeTab === 'pendapatan' || activeTab === 'pembiayaan' || activeTab === 'posting';
-  const isSettingsActive = activeTab === 'users' || activeTab === 'kosongkan' || activeTab === 'import-db';
+  const isSettingsActive = settingsTabIds.includes(activeTab);
 
   const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'users' || tabId === 'kosongkan' || tabId === 'import-db') {
+    if (settingsTabIds.includes(tabId)) {
       setSettingsOpen(true);
     }
     if (tabId === 'skpd' || tabId === 'subkegiatan' || tabId === 'pendapatan' || tabId === 'pembiayaan' || tabId === 'posting') {
@@ -223,39 +222,6 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, colla
               })}
             </div>
           )}
-        </div>
-
-        {/* Data Master Group */}
-        <div className="pt-2">
-          {!collapsed && (
-            <div className="px-3 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-              Data Master
-            </div>
-          )}
-          {masterMenuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectTab(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-3.5'} py-2.5 rounded-xl text-xs font-medium transition cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-500'}`} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </div>
-                {!collapsed && isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                )}
-              </button>
-            );
-          })}
         </div>
 
         {/* Divider Group Pengaturan */}
