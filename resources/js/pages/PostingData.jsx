@@ -27,7 +27,8 @@ import {
   SlidersHorizontal,
   Tag,
   Check,
-  FolderOpen
+  FolderOpen,
+  BarChart3
 } from 'lucide-react';
 
 export default function PostingData({ tahunAnggaran = '2026' }) {
@@ -39,6 +40,7 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
 
   // Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showActiveStatsModal, setShowActiveStatsModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -399,7 +401,19 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {activeStats && (
+            <button
+              onClick={() => setShowActiveStatsModal(true)}
+              className="px-3.5 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
+              title={`Lihat Ringkasan Data Aktif Berjalan TA ${tahunAnggaran}`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Data Aktif TA {tahunAnggaran}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowTahapanModal(true)}
             className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
@@ -428,59 +442,6 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
           </button>
         </div>
       </div>
-
-      {/* Ringkasan Data Aktif Berjalan (Live Active Banner) */}
-      {activeStats && (
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-sm border border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/10 gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Data Aktif Berjalan (Tahun 2027)</span>
-            </div>
-            <div className="text-xs text-slate-400">
-              Rekap: <span className="text-white font-semibold">{activeStats.jumlah_skpd} SKPD</span> &bull; <span className="text-white font-semibold">{activeStats.jumlah_sub_kegiatan} Sub Kegiatan</span> &bull; <span className="text-white font-semibold">{activeStats.jumlah_rekening_rka} RKA</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-            <div className="bg-white/5 border border-white/10 p-3.5 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                <ShoppingBag className="w-3.5 h-3.5 text-indigo-300" />
-                <span>Total Belanja Aktif</span>
-              </div>
-              <p className="text-base font-bold text-white mt-1">{formatRupiah(activeStats.total_belanja)}</p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 p-3.5 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Total Pendapatan Aktif</span>
-              </div>
-              <p className="text-base font-bold text-white mt-1">{formatRupiah(activeStats.total_pendapatan)}</p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 p-3.5 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                <Scale className="w-3.5 h-3.5 text-amber-300" />
-                <span>Pembiayaan Netto</span>
-              </div>
-              <p className="text-base font-bold text-white mt-1">{formatRupiah(activeStats.total_pembiayaan_netto)}</p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 p-3.5 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                <Coins className="w-3.5 h-3.5 text-sky-300" />
-                <span>Surplus / (Defisit)</span>
-              </div>
-              <p className={`text-base font-bold mt-1 ${
-                activeStats.surplus_defisit >= 0 ? 'text-emerald-300' : 'text-rose-300'
-              }`}>
-                {formatRupiah(activeStats.surplus_defisit)}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Daftar Riwayat Sesi Posting */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -521,109 +482,208 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {sessions.map((s) => (
-              <div key={s.id} className="p-5 hover:bg-slate-50/60 transition flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                {/* Info Utama Sesi */}
-                <div className="space-y-2 min-w-0 flex-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
-                      {s.tahap}
-                    </span>
-                    {s.nama_posting && s.nama_posting !== s.tahap && (
-                      <span className="text-xs font-medium text-slate-500 truncate">({s.nama_posting})</span>
-                    )}
-                    <span className="text-[11px] text-slate-400">&bull; TA {s.tahun_anggaran}</span>
-                  </div>
-
-                  {s.keterangan && (
-                    <p className="text-xs text-slate-600 line-clamp-1">{s.keterangan}</p>
-                  )}
-
-                  {/* Metadata & Timestamp */}
-                  <div className="flex items-center gap-4 text-[11px] text-slate-400 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Diposting: <strong className="text-slate-600">{formatDate(s.created_at)}</strong></span>
+            {sessions.map((s, idx) => (
+              <div key={s.id} className="p-5 hover:bg-slate-50/70 transition flex flex-col gap-4">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  {/* Nomor Daftar + Info Utama Sesi */}
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5 tabular-nums">
+                      {idx + 1}
                     </div>
-                    {s.last_synced_at && s.last_synced_at !== s.created_at && (
-                      <div className="flex items-center gap-1.5 text-indigo-600 font-medium">
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Ditindih: {formatDate(s.last_synced_at)}</span>
+
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
+                          {s.tahap}
+                        </span>
+                        {s.nama_posting && s.nama_posting !== s.tahap && (
+                          <span className="text-xs font-semibold text-slate-700 truncate">{s.nama_posting}</span>
+                        )}
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-semibold">
+                          TA {s.tahun_anggaran}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Oleh: <strong className="text-slate-600">{s.posted_by || 'Admin'}</strong></span>
+
+                      {s.keterangan && (
+                        <p className="text-xs text-slate-600 line-clamp-1">{s.keterangan}</p>
+                      )}
+
+                      {/* Metadata & Timestamp */}
+                      <div className="flex items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Diposting: <strong className="text-slate-700">{formatDate(s.created_at)}</strong></span>
+                        </div>
+                        {s.last_synced_at && s.last_synced_at !== s.created_at && (
+                          <div className="flex items-center gap-1.5 text-indigo-600 font-medium">
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Ditindih: {formatDate(s.last_synced_at)}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Oleh: <strong className="text-slate-700">{s.posted_by || 'Admin'}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{s.jumlah_skpd} SKPD &bull; {s.jumlah_sub_kegiatan} Sub Giat</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{s.jumlah_skpd} SKPD &bull; {s.jumlah_sub_kegiatan} Sub Giat</span>
-                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0 self-end xl:self-center">
+                    {/* Tombol Lihat Data Lengkap & Cetak RKA (Posting Explorer) */}
+                    <button
+                      onClick={() => setExploringSession(s)}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="Jelajahi Rincian SKPD, Sub Kegiatan, dan Cetak RKA arsip ini"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      <span>Lihat Data Lengkap</span>
+                    </button>
+
+                    {/* Tombol Tindih Data Posting */}
+                    <button
+                      onClick={() => setConfirmAction({ type: 'overwrite', session: s })}
+                      className="px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                      title="Tindih postingan ini dengan Data Aktif saat ini"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Tindih</span>
+                    </button>
+
+                    {/* Tombol Unposting ke Data Aktif */}
+                    <button
+                      onClick={() => setConfirmAction({ type: 'unposting', session: s })}
+                      className="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                      title="Gantikan Data Aktif dengan data dari posting ini"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Unposting</span>
+                    </button>
+
+                    {/* Tombol Hapus */}
+                    <button
+                      onClick={() => setConfirmAction({ type: 'delete', session: s })}
+                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer shadow-2xs"
+                      title="Hapus Sesi Posting"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Kolom Angka Ringkasan */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200/80 p-3 rounded-xl shrink-0">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Belanja</span>
-                    <span className="text-xs font-bold text-indigo-700 block">{formatRupiah(s.total_belanja)}</span>
+                {/* Baris Angka Ringkasan (Full Width agar angka tidak terpotong) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-11">
+                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Belanja</span>
+                    <span className="text-xs font-bold text-indigo-700 tabular-nums whitespace-nowrap">{formatRupiah(s.total_belanja)}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Pendapatan</span>
-                    <span className="text-xs font-bold text-emerald-700 block">{formatRupiah(s.total_pendapatan)}</span>
+                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Pendapatan</span>
+                    <span className="text-xs font-bold text-emerald-700 tabular-nums whitespace-nowrap">{formatRupiah(s.total_pendapatan)}</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase block">Pembiayaan</span>
-                    <span className="text-xs font-bold text-slate-700 block">{formatRupiah(s.total_pembiayaan_netto)}</span>
+                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Pembiayaan</span>
+                    <span className="text-xs font-bold text-slate-800 tabular-nums whitespace-nowrap">{formatRupiah(s.total_pembiayaan_netto)}</span>
                   </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-1.5 shrink-0 self-end lg:self-center">
-                  {/* Tombol Lihat Data Lengkap & Cetak RKA (Posting Explorer) */}
-                  <button
-                    onClick={() => setExploringSession(s)}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="Jelajahi Rincian SKPD, Sub Kegiatan, dan Cetak RKA arsip ini"
-                  >
-                    <FolderOpen className="w-3.5 h-3.5" />
-                    <span>Lihat Data Lengkap</span>
-                  </button>
-
-                  {/* Tombol Tindih Data Posting */}
-                  <button
-                    onClick={() => setConfirmAction({ type: 'overwrite', session: s })}
-                    className="px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                    title="Tindih postingan ini dengan Data Aktif saat ini"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Tindih</span>
-                  </button>
-
-                  {/* Tombol Unposting ke Data Aktif */}
-                  <button
-                    onClick={() => setConfirmAction({ type: 'unposting', session: s })}
-                    className="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                    title="Gantikan Data Aktif dengan data dari posting ini"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Unposting</span>
-                  </button>
-
-                  {/* Tombol Hapus */}
-                  <button
-                    onClick={() => setConfirmAction({ type: 'delete', session: s })}
-                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer shadow-2xs"
-                    title="Hapus Sesi Posting"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* MODAL 0: RINGKASAN DATA AKTIF BERJALAN */}
+      {showActiveStatsModal && activeStats && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-2xl w-full overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900">Ringkasan Data Aktif Berjalan</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                      TA {tahunAnggaran}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {activeStats.jumlah_skpd} SKPD &bull; {activeStats.jumlah_sub_kegiatan} Sub Kegiatan &bull; {activeStats.jumlah_rekening_rka} Rincian RKA
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowActiveStatsModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50/50">
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
+                  <ShoppingBag className="w-4 h-4 text-indigo-600" />
+                  <span>Total Belanja Aktif</span>
+                </div>
+                <p className="text-base font-bold text-slate-900 mt-1.5 tabular-nums">{formatRupiah(activeStats.total_belanja)}</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <span>Total Pendapatan Aktif</span>
+                </div>
+                <p className="text-base font-bold text-emerald-700 mt-1.5 tabular-nums">{formatRupiah(activeStats.total_pendapatan)}</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
+                  <Scale className="w-4 h-4 text-amber-600" />
+                  <span>Pembiayaan Netto</span>
+                </div>
+                <p className="text-base font-bold text-slate-900 mt-1.5 tabular-nums">{formatRupiah(activeStats.total_pembiayaan_netto)}</p>
+              </div>
+
+              <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
+                  <Coins className="w-4 h-4 text-sky-600" />
+                  <span>Surplus / (Defisit)</span>
+                </div>
+                <p className={`text-base font-bold mt-1.5 tabular-nums ${
+                  activeStats.surplus_defisit >= 0 ? 'text-emerald-700' : 'text-rose-600'
+                }`}>
+                  {formatRupiah(activeStats.surplus_defisit)}
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowActiveStatsModal(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => {
+                  setShowActiveStatsModal(false);
+                  setShowCreateModal(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Posting Data Ini</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: BUAT POSTING BARU */}
       {showCreateModal && (
