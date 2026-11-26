@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, Server, RefreshCw, Menu } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Calendar, Server, RefreshCw, Menu, ChevronDown, Check } from 'lucide-react';
 
 export default function Navbar({
   activeTab,
@@ -11,6 +11,25 @@ export default function Navbar({
   setTahunAnggaran,
   availableYears = [2027, 2026, 2025],
 }) {
+  const [yearOpen, setYearOpen] = useState(false);
+  const yearMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (yearMenuRef.current && !yearMenuRef.current.contains(e.target)) {
+        setYearOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setYearOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   const titles = {
     dashboard: 'Ringkasan & Statistik Anggaran',
     skpd: 'Belanja & RKA: Rekap Perangkat Daerah',
@@ -55,22 +74,64 @@ export default function Navbar({
           <span className="hidden sm:inline">Refresh Data</span>
         </button>
 
-        {/* Tahun Anggaran Selector */}
-        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold cursor-pointer focus-within:ring-2 focus-within:ring-indigo-400">
-          <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-          <select
-            value={String(tahunAnggaran)}
-            onChange={(e) => setTahunAnggaran && setTahunAnggaran(e.target.value)}
+        {/* Tahun Anggaran Custom Dropdown */}
+        <div className="relative" ref={yearMenuRef}>
+          <button
+            type="button"
+            onClick={() => setYearOpen((prev) => !prev)}
+            aria-haspopup="listbox"
+            aria-expanded={yearOpen}
             aria-label="Pilih Tahun Anggaran"
-            className="bg-transparent text-indigo-700 font-bold text-xs focus:outline-none cursor-pointer pr-1"
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+              yearOpen
+                ? 'bg-indigo-100 border-indigo-300 text-indigo-800 shadow-xs'
+                : 'bg-indigo-50 hover:bg-indigo-100/80 border-indigo-200 text-indigo-700'
+            }`}
           >
-            {availableYears.map((yr) => (
-              <option key={yr} value={String(yr)} className="bg-white text-slate-800 font-semibold">
-                TAHUN {yr}
-              </option>
-            ))}
-          </select>
-        </label>
+            <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span>TAHUN {tahunAnggaran}</span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-150 ${
+                yearOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {yearOpen && (
+            <div
+              role="listbox"
+              aria-label="Daftar Tahun Anggaran"
+              className="absolute right-0 mt-2 w-44 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-50"
+            >
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Tahun Anggaran
+              </div>
+              {availableYears.map((yr) => {
+                const isSelected = String(yr) === String(tahunAnggaran);
+                return (
+                  <button
+                    key={yr}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      if (setTahunAnggaran) setTahunAnggaran(String(yr));
+                      setYearOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-50 text-indigo-700 font-bold'
+                        : 'text-slate-700 hover:bg-slate-50 font-medium'
+                    }`}
+                  >
+                    <span>TAHUN {yr}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Status Database */}
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
