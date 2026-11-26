@@ -1004,6 +1004,15 @@ class PostingController extends Controller
             $query->where('id_skpd', $request->input('id_skpd'));
         }
 
+        if ($request->filled('skpd') && $request->input('skpd') !== 'all') {
+            $skpd = $request->input('skpd');
+            $query->where(function ($q) use ($skpd) {
+                $q->where('nama_skpd', $skpd)
+                  ->orWhere('kode_skpd', $skpd)
+                  ->orWhere('id_skpd', $skpd);
+            });
+        }
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -1014,12 +1023,10 @@ class PostingController extends Controller
             });
         }
 
+        $totalNilai = (float) (clone $query)->sum('total');
+
         $perPage = min(max((int) $request->input('per_page', 50), 1), 500);
         $data = $query->orderBy('kode_skpd')->orderBy('kode_akun')->paginate($perPage);
-
-        $totalNilai = (float) DB::table('posting_pendapatan')
-            ->where('posting_id', $postingId)
-            ->sum('total');
 
         return response()->json([
             'status' => 'success',
@@ -1042,6 +1049,15 @@ class PostingController extends Controller
             ->where('posting_id', $postingId)
             ->where('tipe', $tipe);
 
+        if ($request->filled('skpd') && $request->input('skpd') !== 'all') {
+            $skpd = $request->input('skpd');
+            $query->where(function ($q) use ($skpd) {
+                $q->where('nama_skpd', $skpd)
+                  ->orWhere('kode_skpd', $skpd)
+                  ->orWhere('id_skpd', $skpd);
+            });
+        }
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -1051,13 +1067,10 @@ class PostingController extends Controller
             });
         }
 
+        $totalNilai = (float) (clone $query)->sum('total');
+
         $perPage = min(max((int) $request->input('per_page', 50), 1), 500);
         $data = $query->orderBy('kode_akun')->paginate($perPage);
-
-        $totalNilai = (float) DB::table('posting_pembiayaan')
-            ->where('posting_id', $postingId)
-            ->where('tipe', $tipe)
-            ->sum('total');
 
         return response()->json([
             'status' => 'success',

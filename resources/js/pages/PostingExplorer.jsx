@@ -185,10 +185,15 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
   };
 
   // 4. Fetch Pendapatan
+  const activeSkpdFilter = (belanjaView === 'subkegiatan' && selectedSkpd)
+    ? (selectedSkpd.sub_skpd && selectedSkpd.sub_skpd !== 'all' ? selectedSkpd.sub_skpd : selectedSkpd.nama_skpd)
+    : null;
+
   const fetchPendapatan = async () => {
     setPendapatanLoading(true);
     try {
       let url = `/api/posting/${session.id}/pendapatan?page=${pendapatanPage}&per_page=50`;
+      if (activeSkpdFilter) url += `&skpd=${encodeURIComponent(activeSkpdFilter)}`;
       if (pendapatanSearch) url += `&search=${encodeURIComponent(pendapatanSearch)}`;
       const res = await fetch(url);
       const json = await res.json();
@@ -215,6 +220,7 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
     setPembiayaanLoading(true);
     try {
       let url = `/api/posting/${session.id}/pembiayaan?tipe=${pembiayaanTipe}&page=${pembiayaanPage}&per_page=50`;
+      if (activeSkpdFilter) url += `&skpd=${encodeURIComponent(activeSkpdFilter)}`;
       if (pembiayaanSearch) url += `&search=${encodeURIComponent(pembiayaanSearch)}`;
       const res = await fetch(url);
       const json = await res.json();
@@ -346,10 +352,7 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
       {/* Main Tab Navigation */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2">
         <button
-          onClick={() => {
-            setActiveTab('belanja');
-            setBelanjaView('skpd');
-          }}
+          onClick={() => setActiveTab('belanja')}
           className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
             activeTab === 'belanja'
               ? 'bg-indigo-600 text-white shadow-xs'
@@ -783,7 +786,26 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
             <div className="flex items-center gap-2.5">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
               <div>
-                <h2 className="text-sm font-bold text-slate-800">Target Rekening Pendapatan Daerah</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm font-bold text-slate-800">Target Rekening Pendapatan Daerah</h2>
+                  {activeSkpdFilter && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
+                      <span>Filter: {activeSkpdFilter}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSkpd(null);
+                          setBelanjaView('skpd');
+                          setPendapatanPage(1);
+                        }}
+                        className="hover:text-rose-600 cursor-pointer"
+                        title="Tampilkan semua SKPD"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-500">Total: <strong className="text-emerald-700">{formatRupiah(pendapatanSummary)}</strong></p>
               </div>
             </div>
@@ -875,6 +897,24 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
                   {formatRupiah(pembiayaanSummary)}
                 </strong>
               </span>
+
+              {activeSkpdFilter && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
+                  <span>Filter: {activeSkpdFilter}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSkpd(null);
+                      setBelanjaView('skpd');
+                      setPembiayaanPage(1);
+                    }}
+                    className="hover:text-rose-600 cursor-pointer"
+                    title="Tampilkan semua SKPD"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
             </div>
 
             <div className="relative w-full sm:w-72">
