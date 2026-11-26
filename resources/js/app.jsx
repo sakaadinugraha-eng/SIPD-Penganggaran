@@ -61,6 +61,14 @@ function App() {
   const [printViewSubKegiatanId, setPrintViewSubKegiatanId] = useState(null);
   const [printViewMode, setPrintViewMode] = useState('rincian'); // 'rincian' | 'paket'
   const [collapsed, setCollapsed] = useState(false);
+  const [tahunAnggaran, setTahunAnggaran] = useState(() => {
+    try {
+      return localStorage.getItem('sipd_tahun_anggaran') || '2026';
+    } catch {
+      return '2026';
+    }
+  });
+  const [availableYears, setAvailableYears] = useState([2027, 2026, 2025]);
 
   // 1. Cek sesi login saat aplikasi dibuka
   const checkAuth = async () => {
@@ -79,13 +87,31 @@ function App() {
     }
   };
 
-  // 2. Ambil data statistik dan daftar SKPD
+  // 2. Ambil daftar tahun anggaran yang tersedia
+  const fetchAvailableYears = async () => {
+    try {
+      const res = await fetch('/api/data/tahun-anggaran');
+      const json = await res.json();
+      if (json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
+        setAvailableYears(json.data);
+        const saved = localStorage.getItem('sipd_tahun_anggaran');
+        if (!saved && json.default_year) {
+          setTahunAnggaran(String(json.default_year));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching available years:', err);
+    }
+  };
+
+  // 3. Ambil data statistik dan daftar SKPD sesuai tahun anggaran
   const fetchGlobalData = async () => {
     setRefreshing(true);
     try {
+      const params = new URLSearchParams({ tahun_anggaran: String(tahunAnggaran) });
       const [resStats, resSkpd] = await Promise.all([
-        fetch('/api/data/stats'),
-        fetch('/api/data/skpd-list'),
+        fetch(`/api/data/stats?${params.toString()}`),
+        fetch(`/api/data/skpd-list?${params.toString()}`),
       ]);
 
       const dataStats = await resStats.json();
@@ -110,9 +136,22 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      fetchGlobalData();
+      fetchAvailableYears();
     }
   }, [user]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sipd_tahun_anggaran', String(tahunAnggaran));
+    } catch {}
+    if (user) {
+      fetchGlobalData();
+    }
+  }, [user, tahunAnggaran]);
+
+  const handleRefreshAll = async () => {
+    await Promise.all([fetchAvailableYears(), fetchGlobalData()]);
+  };
 
   const handleLogout = async () => {
     if (!window.confirm('Yakin ingin keluar dari dashboard?')) return;
@@ -213,10 +252,18 @@ function App() {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar
           activeTab={printViewSubKegiatanId ? 'rka-print' : activeTab}
-          onRefresh={() => fetchGlobalData(true)}
+          onRefresh={handleRefreshAll}
           refreshing={refreshing}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          tahunAnggaran={tahunAnggaran}
+          setTahunAnggaran={(val) => {
+            setSelectedSkpdFilter('all');
+            setSelectedSubUnitFilter('all');
+            setPrintViewSubKegiatanId(null);
+            setTahunAnggaran(String(val));
+          }}
+          availableYears={availableYears}
         />
 
         {/* Hanya Konten di Bawah Ini Yang Bergeser / Scroll */}
@@ -240,6 +287,7 @@ function App() {
                 <SkpdList
                   skpdList={skpdList}
                   onSelectSkpd={handleSelectSkpdFromList}
+                  tahunAnggaran={tahunAnggaran}
                 />
               )}
 
@@ -250,27 +298,28 @@ function App() {
                   initialSubSkpd={selectedSubUnitFilter}
                   onOpenPrint={handleOpenPrint}
                   onBackToSkpd={() => setActiveTab('skpd')}
+                  tahunAnggaran={tahunAnggaran}
                 />
               )}
 
               {activeTab === 'pendapatan' && (
-                <Pendapatan />
+                <Pendapatan tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'pembiayaan' && (
-                <Pembiayaan />
+                <Pembiayaan tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'posting' && (
-                <PostingData />
+                <PostingData tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'master-akun' && (
-                <MasterAkun />
+                <MasterAkun tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'sumber-dana' && (
-                <MasterSumberDana />
+                <MasterSumberDana tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'users' && (
@@ -280,12 +329,17 @@ function App() {
               {activeTab === 'kosongkan' && (
                 <KosongkanData
                   skpdList={skpdList}
-                  onDataReset={fetchGlobalData}
+                  onDataReset={handleRefreshAll}
+                  tahunAnggaran={tahunAnggaran}
                 />
               )}
 
               {activeTab === 'import-db' && (
-                <ImportDatabase onDataImported={fetchGlobalData} />
+                <ImportDatabase
+                  onDataImported={handleRefreshAll}
+                  tahunAnggaran={tahunAnggaran}
+                  availableYears={availableYears}
+                />
               )}
             </>
           )}

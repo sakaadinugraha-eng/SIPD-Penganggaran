@@ -16,7 +16,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 
-export default function SkpdList({ onSelectSkpd }) {
+export default function SkpdList({ onSelectSkpd, tahunAnggaran = '2026' }) {
   const [hierarchy, setHierarchy] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -31,7 +31,8 @@ export default function SkpdList({ onSelectSkpd }) {
   const fetchHierarchy = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/data/skpd-hierarchy');
+      const params = new URLSearchParams({ tahun_anggaran: String(tahunAnggaran) });
+      const res = await fetch(`/api/data/skpd-hierarchy?${params.toString()}`);
       const json = await res.json();
       if (json.status === 'success') {
         setHierarchy(json.data || []);
@@ -52,8 +53,9 @@ export default function SkpdList({ onSelectSkpd }) {
   };
 
   useEffect(() => {
+    setPage(1);
     fetchHierarchy();
-  }, []);
+  }, [tahunAnggaran]);
 
   const toggleExpand = (kodeSkpd) => {
     setExpanded((prev) => ({

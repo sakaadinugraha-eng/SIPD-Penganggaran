@@ -19,27 +19,79 @@ use App\Services\SqlImportService;
 class DataManagementController extends Controller
 {
     /**
+     * Ambil daftar tahun anggaran yang tersedia di database
+     */
+    public function getAvailableYears()
+    {
+        $years = collect();
+
+        foreach ([
+            'data_sub_keg_bl',
+            'data_pendapatan',
+            'data_pembiayaan',
+            'data_akun',
+            'posting_sessions',
+        ] as $table) {
+            try {
+                $tableYears = DB::table($table)
+                    ->whereNotNull('tahun_anggaran')
+                    ->distinct()
+                    ->pluck('tahun_anggaran');
+                $years = $years->merge($tableYears);
+            } catch (\Throwable $e) {
+                // Abaikan jika tabel belum ada
+            }
+        }
+
+        $dataYears = $years->map(fn ($y) => (int) $y)
+            ->filter(fn ($y) => $y >= 2020 && $y <= 2100)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $defaultYear = $dataYears->first() ?? 2026;
+
+        $allYears = $dataYears
+            ->merge([2025, 2026, 2027])
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $allYears,
+            'default_year' => $defaultYear,
+        ]);
+    }
+
+    /**
      * Ambil data statistik ringkasan
      */
-    public function getStats()
+    public function getStats(Request $request)
     {
-        $totalSubKeg = SubKegiatanBl::where('active', 1)->count();
-        $totalPagu = (float) SubKegiatanBl::where('active', 1)->sum('pagu');
-        $totalRka = Rka::where('active', 1)->count();
-        $totalRkaNilai = (float) Rka::where('active', 1)->sum('total_harga');
-        $totalAkun = MasterAkun::where('active', 1)->count();
-        $totalSumberDana = MasterSumberDana::where('active', 1)->count();
-        $totalPendapatanItem = Pendapatan::where('active', 1)->count();
-        $totalPendapatanNilai = (float) Pendapatan::where('active', 1)->sum('total');
+        $tahun = $request->input('tahun_anggaran');
+        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
 
-        $totalPembiayaanPenerimaan = (float) Pembiayaan::where('tipe', 'penerimaan')->where('active', 1)->sum('total');
-        $totalPembiayaanPengeluaran = (float) Pembiayaan::where('tipe', 'pengeluaran')->where('active', 1)->sum('total');
+        $applyTahun = fn ($query) => $filterTahun ? $query->where('tahun_anggaran', $filterTahun) : $query;
 
-        $skpdCount = SubKegiatanBl::where('active', 1)
+        $totalSubKeg = $applyTahun(SubKegiatanBl::where('active', 1))->count();
+        $totalPagu = (float) $applyTahun(SubKegiatanBl::where('active', 1))->sum('pagu');
+        $totalRka = $applyTahun(Rka::where('active', 1))->count();
+        $totalRkaNilai = (float) $applyTahun(Rka::where('active', 1))->sum('total_harga');
+        $totalAkun = $applyTahun(MasterAkun::where('active', 1))->count();
+        $totalSumberDana = $applyTahun(MasterSumberDana::where('active', 1))->count();
+        $totalPendapatanItem = $applyTahun(Pendapatan::where('active', 1))->count();
+        $totalPendapatanNilai = (float) $applyTahun(Pendapatan::where('active', 1))->sum('total');
+
+        $totalPembiayaanPenerimaan = (float) $applyTahun(Pembiayaan::where('tipe', 'penerimaan')->where('active', 1))->sum('total');
+        $totalPembiayaanPengeluaran = (float) $applyTahun(Pembiayaan::where('tipe', 'pengeluaran')->where('active', 1))->sum('total');
+
+        $skpdCount = $applyTahun(SubKegiatanBl::where('active', 1))
             ->distinct('id_skpd')
             ->count('id_skpd');
 
-        $subUnitCount = SubKegiatanBl::where('active', 1)
+        $subUnitCount = $applyTahun(SubKegiatanBl::where('active', 1))
             ->distinct('kode_sub_skpd')
             ->count('kode_sub_skpd');
 
@@ -65,12 +117,16 @@ class DataManagementController extends Controller
     /**
      * Ambil daftar SKPD unik dan sub unitnya (Puskesmas, RSUD, dll) terintegrasi Belanja, Pendapatan, dan Pembiayaan
      */
-    public function getSkpdList()
+    public function getSkpdList(Request $request)
     {
+        $tahun = $request->input('tahun_anggaran');
+        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
+        $applyTahun = fn ($query) => $filterTahun ? $query->where('tahun_anggaran', $filterTahun) : $query;
+
         $skpds = [];
 
         // 1. Dari SubKegiatanBl
-        $listBl = SubKegiatanBl::where('active', 1)
+        $listBl = $applyTahun(SubKegiatanBl::where('active', 1))
             ->select('nama_skpd', 'id_skpd', 'kode_skpd', DB::raw('count(*) as total_sub_keg'), DB::raw('sum(pagu) as total_pagu'))
             ->groupBy('nama_skpd', 'id_skpd', 'kode_skpd')
             ->get();
@@ -90,7 +146,7 @@ class DataManagementController extends Controller
         }
 
         // 2. Dari PendapatanSkpd
-        $listPend = PendapatanSkpd::where('active', 1)
+        $listPend = $applyTahun(PendapatanSkpd::where('active', 1))
             ->select('nama_skpd', 'id_skpd', 'kode_skpd', 'jumlah_rekening')
             ->get();
         foreach ($listPend as $item) {
@@ -112,7 +168,7 @@ class DataManagementController extends Controller
         }
 
         // 3. Dari PembiayaanSkpd
-        $listPemb = PembiayaanSkpd::where('active', 1)
+        $listPemb = $applyTahun(PembiayaanSkpd::where('active', 1))
             ->select('nama_skpd', 'id_skpd', 'kode_skpd', 'jumlah_rekening')
             ->get();
         foreach ($listPemb as $item) {
@@ -136,7 +192,7 @@ class DataManagementController extends Controller
         $list = array_values($skpds);
         usort($list, fn($a, $b) => strcmp($a['nama_skpd'], $b['nama_skpd']));
 
-        $subList = SubKegiatanBl::where('active', 1)
+        $subList = $applyTahun(SubKegiatanBl::where('active', 1))
             ->select('nama_skpd', 'nama_sub_skpd', 'kode_sub_skpd', 'id_sub_skpd', DB::raw('count(*) as total_sub_keg'), DB::raw('sum(pagu) as total_pagu'))
             ->groupBy('nama_skpd', 'nama_sub_skpd', 'kode_sub_skpd', 'id_sub_skpd')
             ->orderBy('nama_sub_skpd')
@@ -152,9 +208,15 @@ class DataManagementController extends Controller
     /**
      * Ambil struktur hirarki SKPD (Parent dan Unit/Sub-Unit seperti tampilan resmi SIPD)
      */
-    public function getSkpdHierarchy()
+    public function getSkpdHierarchy(Request $request)
     {
-        $rows = SubKegiatanBl::where('active', 1)
+        $tahun = $request->input('tahun_anggaran');
+        $query = SubKegiatanBl::where('active', 1);
+        if ($tahun && $tahun !== 'all') {
+            $query->where('tahun_anggaran', (int) $tahun);
+        }
+
+        $rows = $query
             ->select(
                 'kode_skpd',
                 'nama_skpd',
@@ -226,10 +288,15 @@ class DataManagementController extends Controller
         $skpd = $request->input('skpd');
         $subSkpd = $request->input('sub_skpd');
         $unitType = $request->input('unit_type'); // 'all', 'dinas', 'rsud', 'puskesmas'
+        $tahun = $request->input('tahun_anggaran');
         $perPage = (int) $request->input('per_page', 15);
 
         $query = SubKegiatanBl::where('active', 1)
             ->withCount(['rka', 'indikatorKeluaran as indikator_count', 'capaian']);
+
+        if ($tahun && $tahun !== 'all') {
+            $query->where('tahun_anggaran', (int) $tahun);
+        }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -318,23 +385,39 @@ class DataManagementController extends Controller
      */
     public function resetAll(Request $request)
     {
+        $tahun = $request->input('tahun_anggaran');
+        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
+
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-            SubKegiatanBl::truncate();
-            Rka::truncate();
-            SubKegiatanIndikator::truncate();
-            CapaianProgram::truncate();
-            Pendapatan::truncate();
-            PendapatanSkpd::truncate();
-            Pembiayaan::truncate();
-            PembiayaanSkpd::truncate();
-            MasterAkun::truncate();
-            MasterSumberDana::truncate();
+            $models = [
+                SubKegiatanBl::class,
+                Rka::class,
+                SubKegiatanIndikator::class,
+                CapaianProgram::class,
+                Pendapatan::class,
+                PendapatanSkpd::class,
+                Pembiayaan::class,
+                PembiayaanSkpd::class,
+                MasterAkun::class,
+                MasterSumberDana::class,
+            ];
+            foreach ($models as $modelClass) {
+                if ($filterTahun) {
+                    $modelClass::where('tahun_anggaran', $filterTahun)->delete();
+                } else {
+                    $modelClass::truncate();
+                }
+            }
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            $msg = $filterTahun
+                ? "Seluruh database Tahun Anggaran {$filterTahun} berhasil dikosongkan!"
+                : 'Seluruh database berhasil dikosongkan total (Belanja & RKA, Pendapatan, Pembiayaan, dan Data Master kembali bersih ke nol)!';
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Seluruh database berhasil dikosongkan total (Belanja & RKA, Pendapatan, Pembiayaan, dan Data Master kembali bersih ke nol)!'
+                'message' => $msg
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -351,39 +434,50 @@ class DataManagementController extends Controller
     {
         $request->validate([
             'module' => 'required|string|in:belanja,pendapatan,pembiayaan,master',
+            'tahun_anggaran' => 'nullable',
         ]);
 
         $module = $request->input('module');
+        $tahun = $request->input('tahun_anggaran');
+        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
 
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
             $label = '';
-            
-            if ($module === 'belanja') {
-                SubKegiatanBl::truncate();
-                Rka::truncate();
-                SubKegiatanIndikator::truncate();
-                CapaianProgram::truncate();
-                $label = 'Belanja & RKA (Sub Kegiatan, RKA, Indikator, Capaian)';
-            } elseif ($module === 'pendapatan') {
-                Pendapatan::truncate();
-                PendapatanSkpd::truncate();
-                $label = 'Pendapatan Daerah (Target SKPD & Rincian Rekening)';
-            } elseif ($module === 'pembiayaan') {
-                Pembiayaan::truncate();
-                PembiayaanSkpd::truncate();
-                $label = 'Pembiayaan Daerah (Penerimaan & Pengeluaran)';
-            } elseif ($module === 'master') {
-                MasterAkun::truncate();
-                MasterSumberDana::truncate();
-                $label = 'Data Master (Master Akun & Sumber Dana)';
+            $moduleModels = [
+                'belanja' => [
+                    'models' => [SubKegiatanBl::class, Rka::class, SubKegiatanIndikator::class, CapaianProgram::class],
+                    'label' => 'Belanja & RKA (Sub Kegiatan, RKA, Indikator, Capaian)',
+                ],
+                'pendapatan' => [
+                    'models' => [Pendapatan::class, PendapatanSkpd::class],
+                    'label' => 'Pendapatan Daerah (Target SKPD & Rincian Rekening)',
+                ],
+                'pembiayaan' => [
+                    'models' => [Pembiayaan::class, PembiayaanSkpd::class],
+                    'label' => 'Pembiayaan Daerah (Penerimaan & Pengeluaran)',
+                ],
+                'master' => [
+                    'models' => [MasterAkun::class, MasterSumberDana::class],
+                    'label' => 'Data Master (Master Akun & Sumber Dana)',
+                ],
+            ];
+
+            $label = $moduleModels[$module]['label'];
+            foreach ($moduleModels[$module]['models'] as $modelClass) {
+                if ($filterTahun) {
+                    $modelClass::where('tahun_anggaran', $filterTahun)->delete();
+                } else {
+                    $modelClass::truncate();
+                }
             }
 
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+            $tahunLabel = $filterTahun ? " Tahun Anggaran {$filterTahun}" : '';
             return response()->json([
                 'status' => 'success',
-                'message' => "Seluruh data modul {$label} berhasil dikosongkan total!"
+                'message' => "Seluruh data modul {$label}{$tahunLabel} berhasil dikosongkan!"
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -401,29 +495,38 @@ class DataManagementController extends Controller
         $request->validate([
             'nama_skpd' => 'required|string',
             'scope' => 'nullable|string|in:all,belanja,pendapatan,pembiayaan',
+            'tahun_anggaran' => 'nullable',
         ]);
 
         $namaSkpd = trim($request->input('nama_skpd'));
         $scope = $request->input('scope', 'all');
+        $tahun = $request->input('tahun_anggaran');
+        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
 
         try {
             // Kumpulkan id_skpd dan kode_skpd yang terkait dengan nama_skpd
             $idSkpdList = [];
             $kodeSkpdList = [];
 
-            $blMatch = SubKegiatanBl::where('nama_skpd', $namaSkpd)->get(['id_skpd', 'kode_skpd']);
+            $blQuery = SubKegiatanBl::where('nama_skpd', $namaSkpd);
+            if ($filterTahun) $blQuery->where('tahun_anggaran', $filterTahun);
+            $blMatch = $blQuery->get(['id_skpd', 'kode_skpd']);
             foreach ($blMatch as $b) {
                 if ($b->id_skpd) $idSkpdList[] = $b->id_skpd;
                 if ($b->kode_skpd) $kodeSkpdList[] = $b->kode_skpd;
             }
 
-            $pendMatch = PendapatanSkpd::where('nama_skpd', $namaSkpd)->get(['id_skpd', 'kode_skpd']);
+            $pendQuery = PendapatanSkpd::where('nama_skpd', $namaSkpd);
+            if ($filterTahun) $pendQuery->where('tahun_anggaran', $filterTahun);
+            $pendMatch = $pendQuery->get(['id_skpd', 'kode_skpd']);
             foreach ($pendMatch as $p) {
                 if ($p->id_skpd) $idSkpdList[] = $p->id_skpd;
                 if ($p->kode_skpd) $kodeSkpdList[] = $p->kode_skpd;
             }
 
-            $pembMatch = PembiayaanSkpd::where('nama_skpd', $namaSkpd)->get(['id_skpd', 'kode_skpd']);
+            $pembQuery = PembiayaanSkpd::where('nama_skpd', $namaSkpd);
+            if ($filterTahun) $pembQuery->where('tahun_anggaran', $filterTahun);
+            $pembMatch = $pembQuery->get(['id_skpd', 'kode_skpd']);
             foreach ($pembMatch as $pb) {
                 if ($pb->id_skpd) $idSkpdList[] = $pb->id_skpd;
                 if ($pb->kode_skpd) $kodeSkpdList[] = $pb->kode_skpd;
@@ -444,6 +547,7 @@ class DataManagementController extends Controller
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
                 });
+                if ($filterTahun) $sblQuery->where('tahun_anggaran', $filterTahun);
 
                 $kodeSblList = $sblQuery->pluck('kode_sbl')->filter()->unique()->toArray();
 
@@ -461,55 +565,70 @@ class DataManagementController extends Controller
                         }
                     }
                 });
+                if ($filterTahun) $rkaQuery->where('tahun_anggaran', $filterTahun);
                 if (!empty($kodeSblList) || !empty($idSkpdList)) {
                     $deletedRka = $rkaQuery->delete();
 
-                    SubKegiatanIndikator::where(function ($q) use ($kodeSblList, $idSkpdList) {
+                    $indQuery = SubKegiatanIndikator::where(function ($q) use ($kodeSblList, $idSkpdList) {
                         if (!empty($kodeSblList)) $q->whereIn('kode_sbl', $kodeSblList);
                         if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
-                    })->delete();
+                    });
+                    if ($filterTahun) $indQuery->where('tahun_anggaran', $filterTahun);
+                    $indQuery->delete();
 
-                    CapaianProgram::where(function ($q) use ($kodeSblList, $idSkpdList) {
+                    $capQuery = CapaianProgram::where(function ($q) use ($kodeSblList, $idSkpdList) {
                         if (!empty($kodeSblList)) $q->whereIn('kode_sbl', $kodeSblList);
                         if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
-                    })->delete();
+                    });
+                    if ($filterTahun) $capQuery->where('tahun_anggaran', $filterTahun);
+                    $capQuery->delete();
                 }
 
-                $deletedBl = SubKegiatanBl::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
+                $delBlQuery = SubKegiatanBl::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
                     $q->where('nama_skpd', $namaSkpd);
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
-                })->delete();
+                });
+                if ($filterTahun) $delBlQuery->where('tahun_anggaran', $filterTahun);
+                $deletedBl = $delBlQuery->delete();
             }
 
             // Hapus Pendapatan jika scope all atau pendapatan
             if ($scope === 'all' || $scope === 'pendapatan') {
-                $deletedPendapatan = Pendapatan::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
+                $delPendQuery = Pendapatan::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
                     $q->where('nama_skpd', $namaSkpd);
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
-                })->delete();
+                });
+                if ($filterTahun) $delPendQuery->where('tahun_anggaran', $filterTahun);
+                $deletedPendapatan = $delPendQuery->delete();
 
-                PendapatanSkpd::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
+                $delPendSkpdQuery = PendapatanSkpd::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
                     $q->where('nama_skpd', $namaSkpd);
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
-                })->delete();
+                });
+                if ($filterTahun) $delPendSkpdQuery->where('tahun_anggaran', $filterTahun);
+                $delPendSkpdQuery->delete();
             }
 
             // Hapus Pembiayaan jika scope all atau pembiayaan
             if ($scope === 'all' || $scope === 'pembiayaan') {
-                $deletedPembiayaan = Pembiayaan::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
+                $delPembQuery = Pembiayaan::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
                     $q->where('nama_skpd', $namaSkpd);
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
-                })->delete();
+                });
+                if ($filterTahun) $delPembQuery->where('tahun_anggaran', $filterTahun);
+                $deletedPembiayaan = $delPembQuery->delete();
 
-                PembiayaanSkpd::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
+                $delPembSkpdQuery = PembiayaanSkpd::where(function ($q) use ($namaSkpd, $idSkpdList, $kodeSkpdList) {
                     $q->where('nama_skpd', $namaSkpd);
                     if (!empty($idSkpdList)) $q->orWhereIn('id_skpd', $idSkpdList);
                     if (!empty($kodeSkpdList)) $q->orWhereIn('kode_skpd', $kodeSkpdList);
-                })->delete();
+                });
+                if ($filterTahun) $delPembSkpdQuery->where('tahun_anggaran', $filterTahun);
+                $delPembSkpdQuery->delete();
             }
 
             $detailMsg = [];
@@ -889,8 +1008,10 @@ class DataManagementController extends Controller
         $request->validate([
             'sql_file' => 'nullable|file|max:204800',
             'server_file' => 'nullable|string|max:255',
+            'tahun_anggaran' => 'nullable|integer|min:2020|max:2100',
         ]);
 
+        $tahunAnggaran = (int) ($request->input('tahun_anggaran') ?: 2026);
         $tempPath = null;
 
         try {
@@ -926,7 +1047,7 @@ class DataManagementController extends Controller
                 ], 422);
             }
 
-            $result = $importer->importFromFile($targetPath, true);
+            $result = $importer->importFromFile($targetPath, true, $tahunAnggaran);
             $totalRows = array_sum($result['counts']);
 
             if ($totalRows === 0) {
@@ -943,7 +1064,7 @@ class DataManagementController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Import berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke 4 tabel utama dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
+                'message' => "Import TA {$tahunAnggaran} berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke 4 tabel utama dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
                 'data' => array_merge($result, ['total_rows' => $totalRows]),
             ]);
         } catch (\Throwable $e) {

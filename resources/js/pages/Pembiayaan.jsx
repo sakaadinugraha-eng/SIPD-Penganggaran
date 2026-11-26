@@ -16,7 +16,7 @@ import {
   ArrowUpRight as ArrowUpRightIcon
 } from 'lucide-react';
 
-export default function Pembiayaan() {
+export default function Pembiayaan({ tahunAnggaran = '2026' }) {
   // Tipe: 'penerimaan' | 'pengeluaran'
   const [activeTipe, setActiveTipe] = useState('penerimaan');
 
@@ -50,7 +50,7 @@ export default function Pembiayaan() {
   const fetchSkpdList = async (tipe = activeTipe, page = skpdPage, query = searchSkpd, perPage = skpdPerPage) => {
     setLoadingSkpd(true);
     try {
-      let url = `/api/data/pembiayaan/skpd?tipe=${tipe}&page=${page}&per_page=${perPage}`;
+      let url = `/api/data/pembiayaan/skpd?tipe=${tipe}&page=${page}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -80,7 +80,7 @@ export default function Pembiayaan() {
     if (!idSkpd) return;
     setLoadingRekening(true);
     try {
-      let url = `/api/data/pembiayaan?tipe=${tipe}&id_skpd=${encodeURIComponent(idSkpd)}&page=${page}&per_page=${perPage}`;
+      let url = `/api/data/pembiayaan?tipe=${tipe}&id_skpd=${encodeURIComponent(idSkpd)}&page=${page}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -101,14 +101,20 @@ export default function Pembiayaan() {
   };
 
   useEffect(() => {
+    setViewMode('skpd_list');
+    setSelectedSkpd(null);
+    setSkpdPage(1);
+  }, [tahunAnggaran]);
+
+  useEffect(() => {
     fetchSkpdList(activeTipe, skpdPage, searchSkpd, skpdPerPage);
-  }, [activeTipe, skpdPage, skpdPerPage]);
+  }, [activeTipe, skpdPage, skpdPerPage, tahunAnggaran]);
 
   useEffect(() => {
     if (viewMode === 'detail' && selectedSkpd) {
       fetchRekeningDetail(selectedSkpd.id_skpd, activeTipe, detailPage, searchRekening, detailPerPage);
     }
-  }, [detailPage, detailPerPage, viewMode, selectedSkpd, activeTipe]);
+  }, [detailPage, detailPerPage, viewMode, selectedSkpd, activeTipe, tahunAnggaran]);
 
   const handleTipeChange = (tipe) => {
     setActiveTipe(tipe);

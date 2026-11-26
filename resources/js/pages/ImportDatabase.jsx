@@ -36,8 +36,9 @@ const TARGET_TABLES = [
   },
 ];
 
-export default function ImportDatabase({ onDataImported }) {
+export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026', availableYears = [2027, 2026, 2025] }) {
   const [sourceMode, setSourceMode] = useState('server'); // 'upload' | 'server'
+  const [targetTahun, setTargetTahun] = useState(String(tahunAnggaran));
   const [selectedFile, setSelectedFile] = useState(null);
   const [serverFiles, setServerFiles] = useState([]);
   const [selectedServerFile, setSelectedServerFile] = useState('');
@@ -75,6 +76,10 @@ export default function ImportDatabase({ onDataImported }) {
     fetchServerFiles();
   }, []);
 
+  useEffect(() => {
+    setTargetTahun(String(tahunAnggaran));
+  }, [tahunAnggaran]);
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,6 +116,7 @@ export default function ImportDatabase({ onDataImported }) {
       if (sourceMode === 'upload') {
         const formData = new FormData();
         formData.append('sql_file', selectedFile);
+        formData.append('tahun_anggaran', String(targetTahun));
         res = await fetch('/api/data/import-sql', {
           method: 'POST',
           headers: { Accept: 'application/json' },
@@ -123,7 +129,10 @@ export default function ImportDatabase({ onDataImported }) {
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: JSON.stringify({ server_file: selectedServerFile }),
+          body: JSON.stringify({
+            server_file: selectedServerFile,
+            tahun_anggaran: Number(targetTahun),
+          }),
         });
       }
 
@@ -180,6 +189,28 @@ export default function ImportDatabase({ onDataImported }) {
           onSubmit={handleImport}
           className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5"
         >
+          {/* Tahun Anggaran Target */}
+          <div>
+            <label htmlFor="import-tahun-anggaran" className="block text-xs font-bold text-slate-700 mb-2">
+              Tahun Anggaran Tujuan
+            </label>
+            <select
+              id="import-tahun-anggaran"
+              value={String(targetTahun)}
+              onChange={(e) => setTargetTahun(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {availableYears.map((yr) => (
+                <option key={yr} value={String(yr)}>
+                  Tahun Anggaran {yr}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1.5">
+              Hanya data untuk Tahun Anggaran <strong>{targetTahun}</strong> pada 4 tabel utama yang akan ditimpa. Data tahun lain tetap aman.
+            </p>
+          </div>
+
           {/* Mode Selector */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-2">

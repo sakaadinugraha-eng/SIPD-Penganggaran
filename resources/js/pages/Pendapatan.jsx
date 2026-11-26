@@ -14,7 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-export default function Pendapatan() {
+export default function Pendapatan({ tahunAnggaran = '2026' }) {
   // Navigation mode: 'skpd_list' | 'detail'
   const [viewMode, setViewMode] = useState('skpd_list');
   const [selectedSkpd, setSelectedSkpd] = useState(null);
@@ -45,7 +45,7 @@ export default function Pendapatan() {
   const fetchSkpdList = async (page = skpdPage, query = searchSkpd, perPage = skpdPerPage) => {
     setLoadingSkpd(true);
     try {
-      let url = `/api/data/pendapatan/skpd?page=${page}&per_page=${perPage}`;
+      let url = `/api/data/pendapatan/skpd?page=${page}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -75,7 +75,7 @@ export default function Pendapatan() {
     if (!idSkpd) return;
     setLoadingRekening(true);
     try {
-      let url = `/api/data/pendapatan?id_skpd=${encodeURIComponent(idSkpd)}&page=${page}&per_page=${perPage}`;
+      let url = `/api/data/pendapatan?id_skpd=${encodeURIComponent(idSkpd)}&page=${page}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -96,14 +96,20 @@ export default function Pendapatan() {
   };
 
   useEffect(() => {
+    setViewMode('skpd_list');
+    setSelectedSkpd(null);
+    setSkpdPage(1);
+  }, [tahunAnggaran]);
+
+  useEffect(() => {
     fetchSkpdList(skpdPage, searchSkpd, skpdPerPage);
-  }, [skpdPage, skpdPerPage]);
+  }, [skpdPage, skpdPerPage, tahunAnggaran]);
 
   useEffect(() => {
     if (viewMode === 'detail' && selectedSkpd) {
       fetchRekeningDetail(selectedSkpd.id_skpd, detailPage, searchRekening, detailPerPage);
     }
-  }, [detailPage, detailPerPage, viewMode, selectedSkpd]);
+  }, [detailPage, detailPerPage, viewMode, selectedSkpd, tahunAnggaran]);
 
   const handleSearchSkpdSubmit = (e) => {
     e.preventDefault();

@@ -19,6 +19,7 @@ Route::prefix('api')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // Data Management API
+    Route::get('/data/tahun-anggaran', [DataManagementController::class, 'getAvailableYears']);
     Route::get('/data/stats', [DataManagementController::class, 'getStats']);
     Route::get('/data/skpd-list', [DataManagementController::class, 'getSkpdList']);
     Route::get('/data/skpd-hierarchy', [DataManagementController::class, 'getSkpdHierarchy']);

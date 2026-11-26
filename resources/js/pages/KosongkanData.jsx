@@ -17,7 +17,7 @@ import {
   Database
 } from 'lucide-react';
 
-export default function KosongkanData({ skpdList = [], onDataReset }) {
+export default function KosongkanData({ skpdList = [], onDataReset, tahunAnggaran = '2026' }) {
   const [activeMode, setActiveMode] = useState('skpd'); // 'skpd' | 'modul' | 'all'
   const [dbStats, setDbStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -53,7 +53,8 @@ export default function KosongkanData({ skpdList = [], onDataReset }) {
   const fetchStats = async () => {
     setLoadingStats(true);
     try {
-      const res = await fetch('/api/data/stats');
+      const params = new URLSearchParams({ tahun_anggaran: String(tahunAnggaran) });
+      const res = await fetch(`/api/data/stats?${params.toString()}`);
       const json = await res.json();
       if (json.status === 'success') {
         setDbStats(json.data);
@@ -70,7 +71,7 @@ export default function KosongkanData({ skpdList = [], onDataReset }) {
     setMathModule(generateMath());
     setMathAll(generateMath());
     fetchStats();
-  }, []);
+  }, [tahunAnggaran]);
 
   // 1. Eksekusi Kosongkan per SKPD
   const handleResetSkpd = async (e) => {
@@ -97,7 +98,8 @@ export default function KosongkanData({ skpdList = [], onDataReset }) {
         },
         body: JSON.stringify({ 
           nama_skpd: selectedSkpd,
-          scope: skpdScope
+          scope: skpdScope,
+          tahun_anggaran: Number(tahunAnggaran),
         }),
       });
 
@@ -140,7 +142,10 @@ export default function KosongkanData({ skpdList = [], onDataReset }) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ module: selectedModule }),
+        body: JSON.stringify({
+          module: selectedModule,
+          tahun_anggaran: Number(tahunAnggaran),
+        }),
       });
 
       const json = await res.json();
@@ -181,6 +186,9 @@ export default function KosongkanData({ skpdList = [], onDataReset }) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
+        body: JSON.stringify({
+          tahun_anggaran: Number(tahunAnggaran),
+        }),
       });
 
       const json = await res.json();

@@ -11,7 +11,7 @@ import {
   FolderTree
 } from 'lucide-react';
 
-export default function MasterAkun() {
+export default function MasterAkun({ tahunAnggaran = '2026' }) {
   const [data, setData] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function MasterAkun() {
   const fetchAkun = async (targetPage = page, query = search, kat = filterType) => {
     setLoading(true);
     try {
-      let url = `/api/data/master-akun?page=${targetPage}&per_page=${perPage}`;
+      let url = `/api/data/master-akun?page=${targetPage}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -44,8 +44,12 @@ export default function MasterAkun() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [tahunAnggaran]);
+
+  useEffect(() => {
     fetchAkun(page, search, filterType);
-  }, [page, perPage, filterType]);
+  }, [page, perPage, filterType, tahunAnggaran]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

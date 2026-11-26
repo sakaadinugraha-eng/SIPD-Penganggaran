@@ -128,11 +128,11 @@ class SqlImportService
     ];
 
     /**
-     * Import 4 tabel utama dari file .sql dengan mode menimpa (truncate + insert).
+     * Import 4 tabel utama dari file .sql dengan mode menimpa per tahun anggaran.
      *
-     * @return array{counts: array<string, int>, skipped_tables: array<string, int>, pagu_synced_rows: int, duration_ms: int}
+     * @return array{counts: array<string, int>, skipped_tables: array<string, int>, pagu_synced_rows: int, tahun_anggaran: int, duration_ms: int}
      */
-    public function importFromFile(string $filePath, bool $truncateFirst = true): array
+    public function importFromFile(string $filePath, bool $truncateFirst = true, int $tahunAnggaran = 2026): array
     {
         if (!is_file($filePath) || !is_readable($filePath)) {
             throw new RuntimeException("File SQL tidak ditemukan atau tidak dapat dibaca: {$filePath}");
@@ -201,14 +201,15 @@ class SqlImportService
                 // Cek apakah statement INSERT sudah berakhir dengan ';' di luar string literal
                 if ($this->endsWithSemicolonOutsideQuotes($statementBuffer)) {
                     if ($truncateFirst && !$truncated) {
-                        $this->truncateTargetTables();
+                        $this->clearTargetTablesByYear($tahunAnggaran);
                         $truncated = true;
                     }
 
                     $inserted = $this->processInsertStatement(
                         $statementBuffer,
                         $tableColumns,
-                        $now
+                        $now,
+                        $tahunAnggaran
                     );
 
                     foreach ($inserted as $tbl => $cnt) {
@@ -223,14 +224,15 @@ class SqlImportService
             // Jika file tidak diakhiri newline/semicolon tapi masih ada buffer valid
             if ($insideInsert && trim($statementBuffer) !== '') {
                 if ($truncateFirst && !$truncated) {
-                    $this->truncateTargetTables();
+                    $this->clearTargetTablesByYear($tahunAnggaran);
                     $truncated = true;
                 }
 
                 $inserted = $this->processInsertStatement(
                     $statementBuffer,
                     $tableColumns,
-                    $now
+                    $now,
+                    $tahunAnggaran
                 );
 
                 foreach ($inserted as $tbl => $cnt) {
@@ -243,7 +245,7 @@ class SqlImportService
 
         $paguSyncedRows = 0;
         if ($counts['data_sub_keg_bl'] > 0 && $counts['data_rka'] > 0) {
-            $paguSyncedRows = $this->syncSubKegPaguFromRka();
+            $paguSyncedRows = $this->syncSubKegPaguFromRka($tahunAnggaran);
         }
 
         $durationMs = (int) round((microtime(true) - $startTime) * 1000);
@@ -252,6 +254,7 @@ class SqlImportService
             'counts' => $counts,
             'skipped_tables' => $skippedTables,
             'pagu_synced_rows' => $paguSyncedRows,
+            'tahun_anggaran' => $tahunAnggaran,
             'duration_ms' => $durationMs,
         ];
     }
@@ -259,7 +262,7 @@ class SqlImportService
     /**
      * Sinkronkan kolom pagu pada data_sub_keg_bl agar sesuai dengan penjumlahan rincian di data_rka.
      */
-    private function syncSubKegPaguFromRka(): int
+    private function syncSubKegPaguFromRka(int $tahunAnggaran): int
     {
         return DB::update("
             UPDATE data_sub_keg_bl sk
@@ -267,20 +270,22 @@ class SqlImportService
                 SELECT kode_sbl, COALESCE(SUM(rincian), 0) AS total_rka
                 FROM data_rka
                 WHERE active = 1
+                  AND tahun_anggaran = ?
                 GROUP BY kode_sbl
             ) r ON r.kode_sbl = sk.kode_sbl
             SET sk.pagu = COALESCE(r.total_rka, 0)
             WHERE sk.active = 1
+              AND sk.tahun_anggaran = ?
               AND sk.pagu <> COALESCE(r.total_rka, 0)
-        ");
+        ", [$tahunAnggaran, $tahunAnggaran]);
     }
 
-    private function truncateTargetTables(): void
+    private function clearTargetTablesByYear(int $tahunAnggaran): void
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         try {
             foreach (self::ALLOWED_TABLES as $table) {
-                DB::table($table)->truncate();
+                DB::table($table)->where('tahun_anggaran', $tahunAnggaran)->delete();
             }
         } finally {
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -293,7 +298,7 @@ class SqlImportService
      * @param array<string, array<string, int>> $tableColumns
      * @return array<string, int>
      */
-    private function processInsertStatement(string $sql, array $tableColumns, string $now): array
+    private function processInsertStatement(string $sql, array $tableColumns, string $now, int $tahunAnggaran): array
     {
         // Cocokkan header INSERT ... VALUES saja agar tidak terkena batas pcre.backtrack_limit pada payload besar
         if (!preg_match(
@@ -378,6 +383,10 @@ class SqlImportService
                 if (!array_key_exists($defCol, $record) || $record[$defCol] === null) {
                     $record[$defCol] = $defVal;
                 }
+            }
+
+            if (isset($localCols['tahun_anggaran'])) {
+                $record['tahun_anggaran'] = $tahunAnggaran;
             }
 
             if (isset($localCols['created_at']) && !isset($record['created_at'])) {

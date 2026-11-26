@@ -1,7 +1,16 @@
 import React from 'react';
 import { Calendar, Server, RefreshCw, Menu } from 'lucide-react';
 
-export default function Navbar({ activeTab, onRefresh, refreshing, collapsed, setCollapsed }) {
+export default function Navbar({
+  activeTab,
+  onRefresh,
+  refreshing,
+  collapsed,
+  setCollapsed,
+  tahunAnggaran = '2026',
+  setTahunAnggaran,
+  availableYears = [2027, 2026, 2025],
+}) {
   const titles = {
     dashboard: 'Ringkasan & Statistik Anggaran',
     skpd: 'Belanja & RKA: Rekap Perangkat Daerah',
@@ -46,11 +55,22 @@ export default function Navbar({ activeTab, onRefresh, refreshing, collapsed, se
           <span className="hidden sm:inline">Refresh Data</span>
         </button>
 
-        {/* Tahun Anggaran Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold">
-          <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-          <span>TAHUN 2027</span>
-        </div>
+        {/* Tahun Anggaran Selector */}
+        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold cursor-pointer focus-within:ring-2 focus-within:ring-indigo-400">
+          <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          <select
+            value={String(tahunAnggaran)}
+            onChange={(e) => setTahunAnggaran && setTahunAnggaran(e.target.value)}
+            aria-label="Pilih Tahun Anggaran"
+            className="bg-transparent text-indigo-700 font-bold text-xs focus:outline-none cursor-pointer pr-1"
+          >
+            {availableYears.map((yr) => (
+              <option key={yr} value={String(yr)} className="bg-white text-slate-800 font-semibold">
+                TAHUN {yr}
+              </option>
+            ))}
+          </select>
+        </label>
 
         {/* Status Database */}
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">

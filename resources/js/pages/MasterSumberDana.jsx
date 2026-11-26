@@ -13,7 +13,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 
-export default function MasterSumberDana() {
+export default function MasterSumberDana({ tahunAnggaran = '2026' }) {
   const [data, setData] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ export default function MasterSumberDana() {
   const fetchDana = async (targetPage = page, query = search, status = statusInput) => {
     setLoading(true);
     try {
-      let url = `/api/data/sumber-dana?page=${targetPage}&per_page=${perPage}`;
+      let url = `/api/data/sumber-dana?page=${targetPage}&per_page=${perPage}&tahun_anggaran=${encodeURIComponent(tahunAnggaran)}`;
       if (query) {
         url += `&search=${encodeURIComponent(query)}`;
       }
@@ -46,8 +46,12 @@ export default function MasterSumberDana() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [tahunAnggaran]);
+
+  useEffect(() => {
     fetchDana(page, search, statusInput);
-  }, [page, perPage, statusInput]);
+  }, [page, perPage, statusInput, tahunAnggaran]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

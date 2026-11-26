@@ -23,7 +23,8 @@ export default function SubKegiatan({
   initialSkpd = 'all', 
   initialSubSkpd = 'all',
   onOpenPrint,
-  onBackToSkpd
+  onBackToSkpd,
+  tahunAnggaran = '2026'
 }) {
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({});
@@ -82,6 +83,7 @@ export default function SubKegiatan({
         skpd: selectedSkpd,
         sub_skpd: selectedSubSkpd,
         unit_type: unitType,
+        tahun_anggaran: String(tahunAnggaran),
       });
 
       const res = await fetch(`/api/data/sub-kegiatan?${params.toString()}`);
@@ -104,8 +106,12 @@ export default function SubKegiatan({
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [tahunAnggaran]);
+
+  useEffect(() => {
     fetchData();
-  }, [page, perPage, selectedSkpd, selectedSubSkpd, unitType]);
+  }, [page, perPage, selectedSkpd, selectedSubSkpd, unitType, tahunAnggaran]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

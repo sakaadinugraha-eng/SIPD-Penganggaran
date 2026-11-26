@@ -30,7 +30,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 
-export default function PostingData() {
+export default function PostingData({ tahunAnggaran = '2026' }) {
   const [sessions, setSessions] = useState([]);
   const [activeStats, setActiveStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -91,7 +91,8 @@ export default function PostingData() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/posting');
+      const params = new URLSearchParams({ tahun: String(tahunAnggaran) });
+      const res = await fetch(`/api/posting?${params.toString()}`);
       const json = await res.json();
       if (json.status === 'success') {
         setSessions(json.data.sessions || []);
@@ -185,7 +186,7 @@ export default function PostingData() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [tahunAnggaran]);
 
   // Handle Buat Posting Baru
   const handleCreatePosting = async (e) => {
@@ -206,6 +207,7 @@ export default function PostingData() {
         body: JSON.stringify({
           nama_posting: formData.tahap,
           tahap: formData.tahap,
+          tahun_anggaran: Number(tahunAnggaran),
           keterangan: formData.keterangan,
         })
       });
