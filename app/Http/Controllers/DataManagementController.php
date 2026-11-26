@@ -14,6 +14,7 @@ use App\Models\Pendapatan;
 use App\Models\PendapatanSkpd;
 use App\Models\Pembiayaan;
 use App\Models\PembiayaanSkpd;
+use App\Models\DataUnit;
 use App\Services\SqlImportService;
 use App\Services\SqlExportService;
 
@@ -372,11 +373,18 @@ class DataManagementController extends Controller
             ->orderBy('id')
             ->get();
 
+        $kepalaSkpd = DataUnit::findKepalaSkpd(
+            $sub->id_skpd ? (int) $sub->id_skpd : null,
+            $sub->kode_skpd ?: null,
+            $sub->tahun_anggaran ? (int) $sub->tahun_anggaran : null
+        );
+
         return response()->json([
             'status' => 'success',
             'data' => [
                 'sub_kegiatan' => $sub,
                 'rka_items' => $rkaItems,
+                'kepala_skpd' => $kepalaSkpd,
             ]
         ]);
     }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\PostingSession;
 use App\Models\PostingTahapan;
+use App\Models\DataUnit;
 
 class PostingController extends Controller
 {
@@ -912,12 +913,19 @@ class PostingController extends Controller
         $subObj['indikator_keluaran'] = $indikator;
         $subObj['capaian'] = $capaian;
 
+        $kepalaSkpd = DataUnit::findKepalaSkpd(
+            isset($sub->id_skpd) && $sub->id_skpd ? (int) $sub->id_skpd : null,
+            $sub->kode_skpd ?? null,
+            $session->tahun_anggaran ? (int) $session->tahun_anggaran : null
+        );
+
         return response()->json([
             'status' => 'success',
             'data' => [
                 'session' => $session,
                 'sub_kegiatan' => $subObj,
                 'rka_items' => $rkaItems,
+                'kepala_skpd' => $kepalaSkpd,
             ]
         ]);
     }

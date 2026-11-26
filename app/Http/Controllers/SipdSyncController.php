@@ -14,6 +14,7 @@ use App\Models\Pendapatan;
 use App\Models\PendapatanSkpd;
 use App\Models\Pembiayaan;
 use App\Models\PembiayaanSkpd;
+use App\Models\DataUnit;
 
 class SipdSyncController extends Controller
 {
@@ -70,6 +71,10 @@ class SipdSyncController extends Controller
 
         if ($action === 'singkron_pembiayaan' || $action === 'singkron_pembiayaan_skpd') {
             return $this->syncPembiayaan($request);
+        }
+
+        if ($action === 'singkron_unit') {
+            return $this->syncUnit($request);
         }
 
         return $this->syncRka($request);
@@ -713,6 +718,73 @@ class SipdSyncController extends Controller
             'total_active' => $totalAktif,
             'total_nilai' => $totalNilai,
             'message' => "Berhasil backup data pembiayaan {$tipe}!",
+        ]);
+    }
+
+    /**
+     * Sinkronisasi data Master SKPD & Kepala SKPD (data_unit)
+     */
+    public function syncUnit(Request $request)
+    {
+        $tahun = (int) $request->input('tahun_anggaran', 2026);
+        $rawUnits = $request->input('data_unit')
+            ?? $request->input('unit')
+            ?? $request->input('data')
+            ?? [];
+
+        if (is_string($rawUnits)) {
+            $rawUnits = json_decode($rawUnits, true) ?: [];
+        }
+
+        if (!is_array($rawUnits)) {
+            $rawUnits = [];
+        }
+
+        $now = now();
+        $rows = [];
+        foreach ($rawUnits as $u) {
+            if (!is_array($u)) continue;
+            $idSkpd = $u['id_skpd'] ?? null;
+            if (!$idSkpd) continue;
+
+            $rows[] = [
+                'id_skpd' => (int) $idSkpd,
+                'id_unit' => !empty($u['id_unit']) ? (int) $u['id_unit'] : null,
+                'kode_skpd' => (string) ($u['kode_skpd'] ?? ''),
+                'nama_skpd' => (string) ($u['nama_skpd'] ?? ''),
+                'nama_kepala' => isset($u['nama_kepala']) ? (string) $u['nama_kepala'] : null,
+                'nip_kepala' => isset($u['nip_kepala']) ? (string) $u['nip_kepala'] : null,
+                'pangkat_kepala' => isset($u['pangkat_kepala']) ? (string) $u['pangkat_kepala'] : null,
+                'status_kepala' => isset($u['status_kepala']) ? (string) $u['status_kepala'] : null,
+                'is_skpd' => (int) ($u['is_skpd'] ?? 1),
+                'is_pendapatan' => (int) ($u['is_pendapatan'] ?? 0),
+                'is_pembiayaan' => (int) ($u['is_pembiayaan'] ?? 0),
+                'id_kecamatan' => !empty($u['id_kecamatan']) ? (int) $u['id_kecamatan'] : null,
+                'nama_kecamatan' => isset($u['nama_kecamatan']) ? (string) $u['nama_kecamatan'] : null,
+                'nama_induk' => isset($u['nama_induk']) ? (string) $u['nama_induk'] : null,
+                'kepala_saja' => (int) ($u['kepala_saja'] ?? 0),
+                'tahun_anggaran' => (int) ($u['tahun_anggaran'] ?? $tahun),
+                'active' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        if (!empty($rows)) {
+            $updateCols = array_values(array_diff(array_keys($rows[0]), ['id_skpd', 'tahun_anggaran', 'created_at']));
+            foreach (array_chunk($rows, 200) as $chunk) {
+                DataUnit::upsert($chunk, ['id_skpd', 'tahun_anggaran'], $updateCols);
+            }
+        }
+
+        $totalAktif = DataUnit::where('tahun_anggaran', $tahun)->where('active', 1)->count();
+
+        return response()->json([
+            'status' => 'success',
+            'action' => 'singkron_unit',
+            'saved_batch' => count($rows),
+            'total_active' => $totalAktif,
+            'message' => "Berhasil menyimpan " . count($rows) . " data SKPD & Kepala SKPD tahun {$tahun} ke database lokal!",
         ]);
     }
 }

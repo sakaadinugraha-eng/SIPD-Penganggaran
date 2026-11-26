@@ -557,14 +557,16 @@ export default function RkaPrintView({ subKegiatanId, initialMode = 'rincian', o
             <div className="w-80 text-center">
               <div>Kabupaten Kediri, {currentDate}</div>
               <div className="font-semibold mt-1">
-                Kepala {sub.nama_skpd}
+                {data?.kepala_skpd?.status_kepala ? `${data.kepala_skpd.status_kepala} ` : ''}Kepala {sub.nama_skpd}
               </div>
               <div className="h-20"></div>
               <div className="font-bold underline text-sm">
-                dr. Ahmad khotib
+                {data?.kepala_skpd?.nama_kepala || '........................................'}
               </div>
               <div className="text-xs text-black mt-0.5">
-                NIP. 197003242002121003
+                {data?.kepala_skpd?.nip_kepala
+                  ? `NIP. ${data.kepala_skpd.nip_kepala}`
+                  : 'NIP. ..............................'}
               </div>
             </div>
           </div>
