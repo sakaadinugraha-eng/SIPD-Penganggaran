@@ -557,7 +557,9 @@ export default function RkaPrintView({ subKegiatanId, initialMode = 'rincian', o
             <div className="w-80 text-center">
               <div>Kabupaten Kediri, {currentDate}</div>
               <div className="font-semibold mt-1">
-                {data?.kepala_skpd?.status_kepala ? `${data.kepala_skpd.status_kepala} ` : ''}Kepala {sub.nama_skpd}
+                {data?.kepala_skpd?.status_kepala && /^(plt|pj|plh)\b/i.test(data.kepala_skpd.status_kepala)
+                  ? `${data.kepala_skpd.status_kepala} `
+                  : ''}Kepala {sub.nama_skpd}
               </div>
               <div className="h-20"></div>
               <div className="font-bold underline text-sm">
