@@ -796,26 +796,7 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
             <div className="flex items-center gap-2.5">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-sm font-bold text-slate-800">Target Rekening Pendapatan Daerah</h2>
-                  {activeSkpdFilter && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
-                      <span>Filter: {activeSkpdFilter}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedSkpd(null);
-                          setBelanjaView('skpd');
-                          setPendapatanPage(1);
-                        }}
-                        className="hover:text-rose-600 cursor-pointer"
-                        title="Tampilkan semua SKPD"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                </div>
+                <h2 className="text-sm font-bold text-slate-800">Target Rekening Pendapatan Daerah</h2>
                 <p className="text-[11px] text-slate-500">Total: <strong className="text-emerald-700">{formatRupiah(pendapatanSummary)}</strong></p>
               </div>
             </div>
@@ -839,6 +820,16 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
             <div className="p-12 text-center">
               <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
               <p className="text-xs text-slate-500 font-medium">Memuat data pendapatan...</p>
+            </div>
+          ) : pendapatanData.length === 0 ? (
+            <div className="p-12 text-center">
+              <TrendingUp className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-slate-700">
+                Tidak ada data rekening Pendapatan Daerah{activeSkpdFilter ? ` untuk ${activeSkpdFilter}` : ''}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {pendapatanSearch ? 'Coba ubah kata kunci pencarian.' : 'Perangkat daerah ini tidak memiliki target pendapatan pada arsip posting ini.'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -907,24 +898,6 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
                   {formatRupiah(pembiayaanSummary)}
                 </strong>
               </span>
-
-              {activeSkpdFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
-                  <span>Filter: {activeSkpdFilter}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSkpd(null);
-                      setBelanjaView('skpd');
-                      setPembiayaanPage(1);
-                    }}
-                    className="hover:text-rose-600 cursor-pointer"
-                    title="Tampilkan semua SKPD"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
             </div>
 
             <div className="relative w-full sm:w-72">
@@ -946,6 +919,16 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
             <div className="p-12 text-center">
               <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
               <p className="text-xs text-slate-500 font-medium">Memuat data pembiayaan...</p>
+            </div>
+          ) : pembiayaanData.length === 0 ? (
+            <div className="p-12 text-center">
+              <Scale className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-xs font-semibold text-slate-700">
+                Tidak ada data {pembiayaanTipe === 'penerimaan' ? 'Penerimaan' : 'Pengeluaran'} Pembiayaan{activeSkpdFilter ? ` untuk ${activeSkpdFilter}` : ''}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {pembiayaanSearch ? 'Coba ubah kata kunci pencarian.' : 'Perangkat daerah ini tidak memiliki rekening pembiayaan pada arsip posting ini.'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
