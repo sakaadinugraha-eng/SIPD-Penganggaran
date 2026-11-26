@@ -15,6 +15,7 @@ use App\Models\PendapatanSkpd;
 use App\Models\Pembiayaan;
 use App\Models\PembiayaanSkpd;
 use App\Services\SqlImportService;
+use App\Services\SqlExportService;
 
 class DataManagementController extends Controller
 {
@@ -1053,18 +1054,19 @@ class DataManagementController extends Controller
             if ($totalRows === 0) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Tidak ada data INSERT untuk 4 tabel utama (data_sub_keg_bl, data_rka, data_capaian_prog_sub_keg, data_sub_keg_indikator) di dalam file .sql tersebut.',
+                    'message' => 'Tidak ada data INSERT untuk tabel SIPD (Belanja/RKA, Pendapatan, Pembiayaan, atau Master) di dalam file .sql tersebut.',
                     'data' => $result,
                 ], 422);
             }
 
+            $importedTablesCount = count(array_filter($result['counts'], static fn ($cnt) => $cnt > 0));
             $syncNote = ($result['pagu_synced_rows'] ?? 0) > 0
                 ? ' Pagu pada ' . number_format($result['pagu_synced_rows'], 0, ',', '.') . ' sub kegiatan disinkronkan dari rincian RKA.'
                 : '';
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Import TA {$tahunAnggaran} berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke 4 tabel utama dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
+                'message' => "Import TA {$tahunAnggaran} berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke {$importedTablesCount} tabel dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
                 'data' => array_merge($result, ['total_rows' => $totalRows]),
             ]);
         } catch (\Throwable $e) {
@@ -1077,5 +1079,56 @@ class DataManagementController extends Controller
                 @unlink($tempPath);
             }
         }
+    }
+
+    /**
+     * Ringkasan jumlah baris yang siap di-export untuk tahun anggaran tertentu
+     */
+    public function exportSqlSummary(Request $request, SqlExportService $exporter)
+    {
+        $request->validate([
+            'tahun_anggaran' => 'nullable|integer|min:2020|max:2100',
+        ]);
+
+        $tahunAnggaran = (int) ($request->input('tahun_anggaran') ?: 2026);
+        $counts = $exporter->getExportSummary($tahunAnggaran);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'tahun_anggaran' => $tahunAnggaran,
+                'counts' => $counts,
+                'total_rows' => array_sum($counts),
+            ],
+        ]);
+    }
+
+    /**
+     * Export 4 tabel utama Belanja & RKA menjadi file .sql yang kompatibel dengan fitur Import SQL
+     */
+    public function exportSql(Request $request, SqlExportService $exporter)
+    {
+        $request->validate([
+            'tahun_anggaran' => 'nullable|integer|min:2020|max:2100',
+        ]);
+
+        $tahunAnggaran = (int) ($request->input('tahun_anggaran') ?: 2026);
+        $counts = $exporter->getExportSummary($tahunAnggaran);
+
+        if (array_sum($counts) === 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Tidak ada data untuk Tahun Anggaran {$tahunAnggaran} yang dapat di-export.",
+            ], 422);
+        }
+
+        $filename = "sipd-local-ta-{$tahunAnggaran}-" . now()->format('Ymd-His') . '.sql';
+
+        return response()->streamDownload(function () use ($exporter, $tahunAnggaran): void {
+            $exporter->streamToOutput($tahunAnggaran);
+        }, $filename, [
+            'Content-Type' => 'application/sql; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 }

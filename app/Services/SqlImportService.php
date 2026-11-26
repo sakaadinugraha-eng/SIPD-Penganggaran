@@ -9,13 +9,19 @@ use RuntimeException;
 class SqlImportService
 {
     /**
-     * 4 tabel utama yang diizinkan untuk di-import dari dump SQL.
+     * 10 tabel utama yang diizinkan untuk di-import dari dump SQL.
      */
     public const ALLOWED_TABLES = [
         'data_sub_keg_bl',
         'data_rka',
         'data_capaian_prog_sub_keg',
         'data_sub_keg_indikator',
+        'data_pendapatan_skpd',
+        'data_pendapatan',
+        'data_pembiayaan_skpd',
+        'data_pembiayaan',
+        'data_akun',
+        'data_sumber_dana',
     ];
 
     /**
@@ -161,7 +167,7 @@ class SqlImportService
             @set_time_limit(0);
         }
 
-        $truncated = false;
+        $clearedTables = [];
         $now = now()->format('Y-m-d H:i:s');
 
         try {
@@ -200,9 +206,9 @@ class SqlImportService
 
                 // Cek apakah statement INSERT sudah berakhir dengan ';' di luar string literal
                 if ($this->endsWithSemicolonOutsideQuotes($statementBuffer)) {
-                    if ($truncateFirst && !$truncated) {
-                        $this->clearTargetTablesByYear($tahunAnggaran);
-                        $truncated = true;
+                    if ($truncateFirst && !isset($clearedTables[$targetTable])) {
+                        $this->clearTableByYear($targetTable, $tahunAnggaran);
+                        $clearedTables[$targetTable] = true;
                     }
 
                     $inserted = $this->processInsertStatement(
@@ -223,9 +229,9 @@ class SqlImportService
 
             // Jika file tidak diakhiri newline/semicolon tapi masih ada buffer valid
             if ($insideInsert && trim($statementBuffer) !== '') {
-                if ($truncateFirst && !$truncated) {
-                    $this->clearTargetTablesByYear($tahunAnggaran);
-                    $truncated = true;
+                if ($truncateFirst && isset($targetTable) && !isset($clearedTables[$targetTable])) {
+                    $this->clearTableByYear($targetTable, $tahunAnggaran);
+                    $clearedTables[$targetTable] = true;
                 }
 
                 $inserted = $this->processInsertStatement(
@@ -280,13 +286,11 @@ class SqlImportService
         ", [$tahunAnggaran, $tahunAnggaran]);
     }
 
-    private function clearTargetTablesByYear(int $tahunAnggaran): void
+    private function clearTableByYear(string $table, int $tahunAnggaran): void
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         try {
-            foreach (self::ALLOWED_TABLES as $table) {
-                DB::table($table)->where('tahun_anggaran', $tahunAnggaran)->delete();
-            }
+            DB::table($table)->where('tahun_anggaran', $tahunAnggaran)->delete();
         } finally {
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         }

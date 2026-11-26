@@ -45,7 +45,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, colla
   ];
 
   const settingsSubItems = [
-    { id: 'import-db', label: 'Import Database', icon: Upload },
+    { id: 'import-db', label: 'Import & Export DB', icon: Upload },
     { id: 'users', label: 'Atur Users', icon: Users },
     { id: 'kosongkan', label: 'Pembersihan Data', icon: Trash2, danger: true },
   ];

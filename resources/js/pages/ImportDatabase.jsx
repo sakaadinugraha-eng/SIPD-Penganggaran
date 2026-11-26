@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import {
   Database,
   Upload,
+  Download,
   FileCode2,
   AlertTriangle,
   CheckCircle2,
@@ -34,11 +35,46 @@ const TARGET_TABLES = [
     label: 'Indikator Sub Kegiatan',
     desc: 'Tolok ukur, target output, dan satuan keluaran sub kegiatan.',
   },
+  {
+    name: 'data_pendapatan_skpd',
+    label: 'SKPD Pendapatan',
+    desc: 'Rekapitulasi target pendapatan per Perangkat Daerah.',
+  },
+  {
+    name: 'data_pendapatan',
+    label: 'Rincian Pendapatan',
+    desc: 'Detail rekening dan uraian target pendapatan daerah.',
+  },
+  {
+    name: 'data_pembiayaan_skpd',
+    label: 'SKPD Pembiayaan',
+    desc: 'Rekapitulasi penerimaan dan pengeluaran pembiayaan per SKPD.',
+  },
+  {
+    name: 'data_pembiayaan',
+    label: 'Rincian Pembiayaan',
+    desc: 'Detail rekening penerimaan dan pengeluaran pembiayaan daerah.',
+  },
+  {
+    name: 'data_akun',
+    label: 'Master Akun / Rekening',
+    desc: 'Referensi kode akun belanja, pendapatan, dan pembiayaan.',
+  },
+  {
+    name: 'data_sumber_dana',
+    label: 'Master Sumber Dana',
+    desc: 'Daftar klasifikasi sumber pendanaan APBD.',
+  },
 ];
 
 export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026', availableYears = [2027, 2026, 2025] }) {
+  const [actionTab, setActionTab] = useState('import'); // 'import' | 'export'
   const [sourceMode, setSourceMode] = useState('server'); // 'upload' | 'server'
   const [targetTahun, setTargetTahun] = useState(String(tahunAnggaran));
+  const [exportTahun, setExportTahun] = useState(String(tahunAnggaran));
+  const [exportSummary, setExportSummary] = useState(null);
+  const [loadingExportSummary, setLoadingExportSummary] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [serverFiles, setServerFiles] = useState([]);
   const [selectedServerFile, setSelectedServerFile] = useState('');
@@ -78,7 +114,68 @@ export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026',
 
   useEffect(() => {
     setTargetTahun(String(tahunAnggaran));
+    setExportTahun(String(tahunAnggaran));
   }, [tahunAnggaran]);
+
+  const fetchExportSummary = async (yr = exportTahun) => {
+    setLoadingExportSummary(true);
+    try {
+      const params = new URLSearchParams({ tahun_anggaran: String(yr) });
+      const res = await fetch(`/api/data/export-sql/summary?${params.toString()}`);
+      const json = await res.json();
+      if (json.status === 'success') {
+        setExportSummary(json.data);
+      }
+    } catch (err) {
+      console.error('Gagal memuat ringkasan export SQL:', err);
+    } finally {
+      setLoadingExportSummary(false);
+    }
+  };
+
+  useEffect(() => {
+    if (actionTab === 'export') {
+      fetchExportSummary(exportTahun);
+    }
+  }, [actionTab, exportTahun]);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ tahun_anggaran: String(exportTahun) });
+      const res = await fetch(`/api/data/export-sql?${params.toString()}`);
+
+      if (!res.ok) {
+        let errMessage = 'Gagal mengekspor database SQL.';
+        try {
+          const json = await res.json();
+          if (json?.message) errMessage = json.message;
+        } catch {}
+        toast.error(errMessage);
+        return;
+      }
+
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = match ? match[1] : `sipd-local-ta-${exportTahun}.sql`;
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`File ${filename} berhasil diunduh.`);
+    } catch (err) {
+      toast.error('Terjadi kesalahan saat mengekspor SQL: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -161,30 +258,148 @@ export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026',
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0">
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Import Database (.sql)</h2>
+            <h2 className="text-base font-bold text-slate-900">Import &amp; Export Database (.sql)</h2>
             <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-              Impor dump database WP-SIPD langsung ke 4 tabel utama Belanja & RKA dengan mode menimpa data lama.
+              Impor dump WP-SIPD atau ekspor seluruh data (Belanja &amp; RKA, Pendapatan, Pembiayaan, Master) ke file <code className="font-mono">.sql</code>.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shrink-0">
-          <span>Batas Upload PHP:</span>
-          <span className="font-bold text-slate-700">{phpLimits.upload_max_filesize}</span>
-          <span className="text-slate-300">|</span>
-          <span>POST:</span>
-          <span className="font-bold text-slate-700">{phpLimits.post_max_size}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setActionTab('import')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                actionTab === 'import'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import .sql</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActionTab('export')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                actionTab === 'export'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export .sql</span>
+            </button>
+          </div>
+
+          {actionTab === 'import' && (
+            <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 shrink-0">
+              <span>Batas Upload PHP:</span>
+              <span className="font-bold text-slate-700">{phpLimits.upload_max_filesize}</span>
+              <span className="text-slate-300">|</span>
+              <span>POST:</span>
+              <span className="font-bold text-slate-700">{phpLimits.post_max_size}</span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Form Import (7 cols) */}
+        {actionTab === 'export' ? (
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Export Database ke File .sql</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Menghasilkan file <code className="font-mono">.sql</code> berisi statement <code className="font-mono">INSERT INTO</code> untuk seluruh modul (Belanja &amp; RKA, Pendapatan, Pembiayaan, dan Master) yang 100% kompatibel dengan fitur Import SQL.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fetchExportSummary(exportTahun)}
+                disabled={loadingExportSummary}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 cursor-pointer shrink-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingExportSummary ? 'animate-spin' : ''}`} />
+                <span>Cek Ulang</span>
+              </button>
+            </div>
+
+            <div>
+              <label htmlFor="export-tahun-anggaran" className="block text-xs font-bold text-slate-700 mb-2">
+                Tahun Anggaran yang Di-export
+              </label>
+              <select
+                id="export-tahun-anggaran"
+                value={String(exportTahun)}
+                onChange={(e) => setExportTahun(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {availableYears.map((yr) => (
+                  <option key={yr} value={String(yr)}>
+                    Tahun Anggaran {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 divide-y divide-slate-200/70">
+              <div className="px-4 py-2.5 flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>Ringkasan Data TA {exportTahun}</span>
+                <span className="text-indigo-700">
+                  {loadingExportSummary ? 'Menghitung...' : `${formatNumber(exportSummary?.total_rows || 0)} total baris`}
+                </span>
+              </div>
+              {TARGET_TABLES.map((tbl) => (
+                <div key={tbl.name} className="px-4 py-2.5 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-semibold text-slate-800">{tbl.label}</div>
+                    <div className="font-mono text-[11px] text-slate-500">{tbl.name}</div>
+                  </div>
+                  <span className="font-bold text-slate-700">
+                    {loadingExportSummary ? '...' : `${formatNumber(exportSummary?.counts?.[tbl.name] || 0)} baris`}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {!loadingExportSummary && (exportSummary?.total_rows || 0) === 0 && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 flex items-start gap-2.5 text-xs text-amber-800">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Belum ada data untuk <strong>Tahun Anggaran {exportTahun}</strong>. Pilih tahun lain atau impor data terlebih dahulu.
+                </span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting || loadingExportSummary || (exportSummary?.total_rows || 0) === 0}
+              className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {exporting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Menyiapkan &amp; Mengunduh File .sql...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Download Export Database (.sql) TA {exportTahun}</span>
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+        /* Form Import (7 cols) */
         <form
           onSubmit={handleImport}
           className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5"
@@ -207,7 +422,7 @@ export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026',
               ))}
             </select>
             <p className="text-[11px] text-slate-500 mt-1.5">
-              Hanya data untuk Tahun Anggaran <strong>{targetTahun}</strong> pada 4 tabel utama yang akan ditimpa. Data tahun lain tetap aman.
+              Hanya tabel yang ada di file <code className="font-mono">.sql</code> pada Tahun Anggaran <strong>{targetTahun}</strong> yang akan ditimpa. Data tahun lain &amp; tabel yang tidak ada di file tetap aman.
             </p>
           </div>
 
@@ -392,12 +607,13 @@ export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026',
             ) : (
               <>
                 <Database className="w-4 h-4" />
-                <span>Mulai Import ke 4 Tabel Utama</span>
+                <span>Mulai Import ke Database</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
+        )}
 
         {/* Info & Result Panel (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
@@ -432,7 +648,7 @@ export default function ImportDatabase({ onDataImported, tahunAnggaran = '2026',
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3.5">
             <div className="flex items-center gap-2">
               <Table2 className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-xs font-bold text-slate-900">Cakupan 4 Tabel Utama</h3>
+              <h3 className="text-xs font-bold text-slate-900">Cakupan 10 Tabel Data SIPD</h3>
             </div>
             <div className="space-y-2.5">
               {TARGET_TABLES.map((tbl) => (
