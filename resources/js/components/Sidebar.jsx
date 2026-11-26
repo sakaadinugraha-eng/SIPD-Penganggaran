@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
+  FolderTree,
   Building2,
   Trash2,
   Database,
@@ -47,9 +48,13 @@ export default function Sidebar({
   dbInfo = null,
 }) {
   const [penganggaranOpen, setPenganggaranOpen] = useState(true);
-  const settingsTabIds = ['master-skpd', 'master-akun', 'sumber-dana', 'import-db', 'users', 'kosongkan'];
+  const dataMasterTabIds = ['master-skpd', 'master-akun', 'sumber-dana'];
+  const settingsTabIds = [...dataMasterTabIds, 'import-db', 'users', 'kosongkan'];
   const [settingsOpen, setSettingsOpen] = useState(
     settingsTabIds.includes(activeTab)
+  );
+  const [dataMasterOpen, setDataMasterOpen] = useState(
+    dataMasterTabIds.includes(activeTab)
   );
 
   useEffect(() => {
@@ -73,14 +78,19 @@ export default function Sidebar({
     { id: 'posting', label: 'Posting Data', icon: BookmarkCheck },
   ];
 
-  const settingsSubItems = [
+  const dataMasterSubItems = [
     { id: 'master-skpd', label: 'Master SKPD', icon: Building2 },
     { id: 'master-akun', label: 'Master Akun', icon: Receipt },
     { id: 'sumber-dana', label: 'Sumber Dana', icon: Coins },
+  ];
+
+  const settingsSubItems = [
     { id: 'import-db', label: 'Import & Export DB', icon: Upload },
     { id: 'users', label: 'Atur Users', icon: Users },
     { id: 'kosongkan', label: 'Pembersihan Data', icon: Trash2, danger: true },
   ];
+
+  const isDataMasterActive = dataMasterTabIds.includes(activeTab);
 
   const isPenganggaranActive =
     activeTab === 'skpd' ||
@@ -92,6 +102,9 @@ export default function Sidebar({
 
   const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
+    if (dataMasterTabIds.includes(tabId)) {
+      setDataMasterOpen(true);
+    }
     if (settingsTabIds.includes(tabId)) {
       setSettingsOpen(true);
     }
@@ -348,6 +361,72 @@ export default function Sidebar({
             {/* Sub Menu Items Pengaturan */}
             {(!isCollapsedDesktop && settingsOpen) && (
               <div className="mt-1.5 pl-3 space-y-1 border-l-2 border-slate-200/80 ml-4">
+                {/* Sub Menu Data Master (Master SKPD, Master Akun, Sumber Dana) */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setDataMasterOpen(!dataMasterOpen)}
+                    aria-expanded={dataMasterOpen}
+                    className={`w-full min-h-[38px] flex items-center justify-between px-3 py-2 rounded-xl text-xs transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      isDataMasterActive && !dataMasterOpen
+                        ? 'bg-indigo-50 text-indigo-800 font-bold border border-indigo-200'
+                        : isDataMasterActive
+                        ? 'bg-slate-100 text-slate-900 font-semibold'
+                        : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FolderTree
+                        className={`w-3.5 h-3.5 shrink-0 ${isDataMasterActive ? 'text-indigo-700' : 'text-slate-500'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">Data Master</span>
+                    </div>
+                    <div className="text-slate-400">
+                      {dataMasterOpen ? <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />}
+                    </div>
+                  </button>
+
+                  {dataMasterOpen && (
+                    <div className="mt-1 pl-3 space-y-1 border-l-2 border-slate-200/80 ml-3.5">
+                      {dataMasterSubItems.map((sub) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = activeTab === sub.id;
+                        return (
+                          <button
+                            type="button"
+                            key={sub.id}
+                            onClick={() => handleSelectTab(sub.id)}
+                            aria-current={isSubActive ? 'page' : undefined}
+                            className={`relative w-full min-h-[36px] flex items-center justify-between px-3 py-1.5 rounded-xl text-xs transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                              isSubActive
+                                ? 'bg-indigo-50 text-indigo-800 font-bold border border-indigo-200'
+                                : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium'
+                            }`}
+                          >
+                            {isSubActive && (
+                              <span
+                                className="absolute -left-[14px] top-1.5 bottom-1.5 w-1 rounded-r-full bg-indigo-600"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <SubIcon
+                                className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-indigo-700' : 'text-slate-500'}`}
+                                aria-hidden="true"
+                              />
+                              <span className="truncate">{sub.label}</span>
+                            </div>
+                            {isSubActive && (
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-indigo-600" aria-hidden="true" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {settingsSubItems.map((sub) => {
                   const SubIcon = sub.icon;
                   const isSubActive = activeTab === sub.id;
@@ -396,7 +475,7 @@ export default function Sidebar({
             {/* Icon Shortcut saat Collapsed */}
             {isCollapsedDesktop && (
               <div className="space-y-1.5">
-                {settingsSubItems.map((sub) => {
+                {[...dataMasterSubItems, ...settingsSubItems].map((sub) => {
                   const SubIcon = sub.icon;
                   const isSubActive = activeTab === sub.id;
                   return (
@@ -433,26 +512,6 @@ export default function Sidebar({
             )}
           </div>
         </nav>
-
-        {/* System Status info (hanya saat tidak collapsed) */}
-        {!isCollapsedDesktop && (
-          <div className="px-3.5 py-2.5 mx-3 mb-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px]">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  isDbError ? 'bg-rose-600' : isDbConnected ? 'bg-emerald-600' : 'bg-amber-500'
-                }`}
-                aria-hidden="true"
-              />
-              <span className="font-semibold text-slate-800">
-                {isDbError ? 'Database Terputus' : 'Server Lokal Aktif'}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-600 truncate">
-              {dbInfo?.host || '127.0.0.1'} &bull; {dbInfo?.name || 'db_sipd'}
-            </p>
-          </div>
-        )}
 
         {/* User Card & Logout */}
         <div className="p-3 border-t border-slate-100 bg-slate-50/70 shrink-0">
