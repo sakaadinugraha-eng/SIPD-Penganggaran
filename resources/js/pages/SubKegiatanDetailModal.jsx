@@ -8,7 +8,10 @@ export default function SubKegiatanDetailModal({ sub: propSub, subKegiatan, onCl
   if (!sub) return null;
 
   const formatRupiah = (num) => {
-    return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+    return 'Rp ' + Number(num || 0).toLocaleString('id-ID', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const rkaList = sub.rka || [];
@@ -20,24 +23,24 @@ export default function SubKegiatanDetailModal({ sub: propSub, subKegiatan, onCl
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl my-8 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-start justify-between">
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-start justify-between">
           <div className="min-w-0 pr-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold border border-indigo-400/20 uppercase tracking-wide">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200 uppercase tracking-wide">
                 {sub.kode_sub_giat}
               </span>
               <span className="text-[11px] text-slate-400 font-mono">
                 {sub.kode_sbl}
               </span>
             </div>
-            <h3 className="text-base font-bold text-white truncate">{sub.nama_sub_giat}</h3>
-            <p className="text-xs text-slate-300 mt-0.5 truncate">
-              {sub.nama_sub_skpd || sub.nama_skpd} &bull; <span className="text-emerald-400 font-semibold">{formatRupiah(sub.pagu)}</span>
+            <h3 className="text-base font-bold text-slate-900 truncate">{sub.nama_sub_giat}</h3>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">
+              {sub.nama_sub_skpd || sub.nama_skpd} &bull; <span className="text-emerald-700 font-bold tabular-nums">{formatRupiah(sub.pagu)}</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

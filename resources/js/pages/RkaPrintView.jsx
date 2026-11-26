@@ -148,7 +148,7 @@ export default function RkaPrintView({ subKegiatanId, initialMode = 'rincian', o
             className="text-blue-600 hover:text-blue-800 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>← Kembali</span>
+            <span>Kembali</span>
           </button>
           {(postingId || data?.session) && (
             <span className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs flex items-center gap-1.5">
