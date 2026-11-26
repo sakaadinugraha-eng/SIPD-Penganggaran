@@ -13,7 +13,7 @@ import {
   Scale 
 } from 'lucide-react';
 
-export default function Dashboard({ stats, onNavigate }) {
+export default function Dashboard({ stats, onNavigate, tahunAnggaran = '2026' }) {
   const formatRupiah = (num) => {
     return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
   };
@@ -22,7 +22,7 @@ export default function Dashboard({ stats, onNavigate }) {
     {
       title: 'Total Pendapatan Daerah',
       value: formatRupiah(stats?.total_pendapatan_nilai),
-      sub: `${(stats?.total_pendapatan_item || 0).toLocaleString('id-ID')} Rekening Pendapatan 2027`,
+      sub: `${(stats?.total_pendapatan_item || 0).toLocaleString('id-ID')} Rekening Pendapatan ${tahunAnggaran}`,
       icon: TrendingUp,
       color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
       tab: 'pendapatan'
@@ -46,7 +46,7 @@ export default function Dashboard({ stats, onNavigate }) {
     {
       title: 'Total Pagu Sub Kegiatan',
       value: formatRupiah(stats?.total_pagu),
-      sub: 'Akumulasi Pagu Indikatif 2027',
+      sub: `Akumulasi Pagu Indikatif ${tahunAnggaran}`,
       icon: ShoppingBag,
       color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
       tab: 'skpd'
@@ -78,7 +78,7 @@ export default function Dashboard({ stats, onNavigate }) {
     {
       title: 'Total Sumber Dana',
       value: (stats?.total_sumber_dana || 0).toLocaleString('id-ID'),
-      sub: 'Klasifikasi Pendanaan APBD 2027',
+      sub: `Klasifikasi Pendanaan APBD ${tahunAnggaran}`,
       icon: Coins,
       color: 'bg-amber-500/10 text-amber-600 border-amber-200',
       tab: 'sumber-dana'

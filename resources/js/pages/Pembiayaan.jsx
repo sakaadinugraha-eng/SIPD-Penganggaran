@@ -210,7 +210,7 @@ export default function Pembiayaan({ tahunAnggaran = '2026' }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-bold text-slate-800">Pembiayaan Daerah</h3>
                   <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
-                    TA 2027
+                    TA {tahunAnggaran}
                   </span>
 
                   {/* Switcher Tipe Penerimaan / Pengeluaran */}
@@ -504,7 +504,7 @@ export default function Pembiayaan({ tahunAnggaran = '2026' }) {
                 {selectedSkpd.nama_skpd}
               </h2>
               <p className="text-xs text-slate-500">
-                Rincian rekening pembiayaan {activeTipe} Tahun Anggaran 2027
+                Rincian rekening pembiayaan {activeTipe} Tahun Anggaran {tahunAnggaran}
               </p>
             </div>
 

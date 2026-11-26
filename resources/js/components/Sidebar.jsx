@@ -22,7 +22,7 @@ import {
   Upload
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, setActiveTab, user, onLogout, collapsed, setCollapsed }) {
+export default function Sidebar({ activeTab, setActiveTab, user, onLogout, collapsed, setCollapsed, tahunAnggaran = '2026' }) {
   const [penganggaranOpen, setPenganggaranOpen] = useState(true);
   const settingsTabIds = ['master-skpd', 'master-akun', 'sumber-dana', 'import-db', 'users', 'kosongkan'];
   const [settingsOpen, setSettingsOpen] = useState(
@@ -87,7 +87,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, colla
               </div>
               <div className="min-w-0 transition-opacity duration-200">
                 <h1 className="text-sm font-bold text-slate-900 tracking-tight truncate">SIPD LOCAL</h1>
-                <p className="text-[11px] text-slate-500 font-medium truncate">Penganggaran 2027</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate">Penganggaran {tahunAnggaran}</p>
               </div>
             </div>
 

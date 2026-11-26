@@ -247,6 +247,7 @@ function App() {
         onLogout={handleLogout}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
+        tahunAnggaran={tahunAnggaran}
       />
 
       {/* Konten Kanan (Fixed Height dengan Scroll Area Sendiri) */}
@@ -281,6 +282,7 @@ function App() {
                 <Dashboard
                   stats={stats}
                   onNavigate={(tab) => setActiveTab(tab)}
+                  tahunAnggaran={tahunAnggaran}
                 />
               )}
 

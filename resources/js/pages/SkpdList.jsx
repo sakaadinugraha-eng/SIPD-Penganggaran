@@ -168,7 +168,7 @@ export default function SkpdList({ onSelectSkpd, tahunAnggaran = '2026' }) {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-800">Belanja & RKA: Rekap Perangkat Daerah</h3>
               <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
-                Belanja Daerah 2027
+                Belanja Daerah {tahunAnggaran}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">

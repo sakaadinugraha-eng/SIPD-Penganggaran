@@ -297,17 +297,17 @@ export default function RkaPrintView({ subKegiatanId, initialMode = 'rincian', o
                 <td className="py-1 px-2">Januari s.d. Desember</td>
               </tr>
               <tr>
-                <td className="py-1 px-3 font-semibold align-top">Alokasi 2026</td>
+                <td className="py-1 px-3 font-semibold align-top">Alokasi {Number(sub.tahun_anggaran || 2026) - 1}</td>
                 <td className="py-1 px-1 align-top">:</td>
                 <td className="py-1 px-2 font-semibold">Rp 0,00</td>
               </tr>
               <tr>
-                <td className="py-1 px-3 font-semibold align-top">Alokasi 2027</td>
+                <td className="py-1 px-3 font-semibold align-top">Alokasi {sub.tahun_anggaran || 2026}</td>
                 <td className="py-1 px-1 align-top">:</td>
                 <td className="py-1 px-2 font-bold">Rp {formatRupiah(sub.pagu)}</td>
               </tr>
               <tr>
-                <td className="py-1 px-3 font-semibold align-top">Alokasi 2028</td>
+                <td className="py-1 px-3 font-semibold align-top">Alokasi {Number(sub.tahun_anggaran || 2026) + 1}</td>
                 <td className="py-1 px-1 align-top">:</td>
                 <td className="py-1 px-2 font-semibold">Rp {formatRupiah(sub.pagu_n_depan || 0)}</td>
               </tr>

@@ -197,7 +197,7 @@ export default function Pendapatan({ tahunAnggaran = '2026' }) {
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-slate-800">Pendapatan Daerah: Rekap Perangkat Daerah</h3>
                   <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
-                    TA 2027
+                    TA {tahunAnggaran}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -460,7 +460,7 @@ export default function Pendapatan({ tahunAnggaran = '2026' }) {
                 {selectedSkpd.nama_skpd}
               </h2>
               <p className="text-xs text-slate-500">
-                Daftar rincian rekening target penerimaan pendapatan daerah Tahun Anggaran 2027
+                Daftar rincian rekening target penerimaan pendapatan daerah Tahun Anggaran {tahunAnggaran}
               </p>
             </div>
 
