@@ -46,11 +46,17 @@ export default function Login({ onLoginSuccess }) {
       <div className="max-w-md w-full">
         {/* Header Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white mb-3 shadow-md shadow-indigo-600/20">
-            <Database className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-3 shadow-md shadow-indigo-900/15">
+            <img
+              src={`${(typeof window !== 'undefined' && window.__APP_BASE__) ? window.__APP_BASE__.replace(/\/+$/, '') : ''}/images/sada-sipd-icon.jpg`}
+              alt="Logo SADA SIPD"
+              width={64}
+              height={64}
+              className="w-full h-full object-cover"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">SIPD Local Server</h1>
-          <p className="text-sm text-slate-500 mt-1">Sistem Manajemen & Sinkronisasi RKA SIPD RI</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">SADA SIPD</h1>
+          <p className="text-sm text-slate-500 mt-1">Sinkronisasi Anggaran dan Data</p>
         </div>
 
         {/* Card Form */}
@@ -124,7 +130,7 @@ export default function Login({ onLoginSuccess }) {
 
         {/* Footer info */}
         <p className="text-center text-xs text-slate-400 mt-6 font-medium">
-          SIPD Local Server &bull; Port 8000 &bull; Database: db_sipd
+          SADA SIPD &bull; Port 8000 &bull; Database: db_sipd
         </p>
       </div>
     </div>

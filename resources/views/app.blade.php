@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIPD Local - Sistem Manajemen Anggaran Daerah</title>
-    <link rel="icon" type="image/png" href="https://sipd.kemendagri.go.id/favicon.ico">
+    <title>SADA SIPD - Sinkronisasi Anggaran dan Data</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/sada-sipd-icon.jpg') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script>
         window.__APP_BASE__ = "{{ url('/') }}";

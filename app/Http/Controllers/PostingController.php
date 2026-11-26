@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PostingSession;
 use App\Models\PostingTahapan;
 use App\Models\DataUnit;
+use App\Services\SystemLogService;
 
 class PostingController extends Controller
 {
@@ -259,6 +260,15 @@ class PostingController extends Controller
 
             DB::commit();
 
+            SystemLogService::logActivity([
+                'category' => 'posting',
+                'title' => 'Posting Data: ' . $session->nama_posting,
+                'description' => "Tahap {$session->tahap} (TA {$tahun}) berhasil diposting.",
+                'status' => 'success',
+                'tahun_anggaran' => $tahun,
+                'actor' => $session->posted_by ?: (auth()->user()?->name ?? 'Admin'),
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data aktif berhasil diposting sebagai arsip baru!',
@@ -428,6 +438,15 @@ class PostingController extends Controller
 
             DB::commit();
 
+            SystemLogService::logActivity([
+                'category' => 'posting',
+                'title' => 'Perbarui Posting: ' . $session->nama_posting,
+                'description' => "Arsip {$session->tahap} (TA {$tahun}) ditindih dengan data aktif terbaru.",
+                'status' => 'info',
+                'tahun_anggaran' => $tahun,
+                'actor' => $session->posted_by ?: (auth()->user()?->name ?? 'Admin'),
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data posting "' . $session->nama_posting . '" berhasil ditindih dengan data aktif terbaru!',
@@ -591,6 +610,15 @@ class PostingController extends Controller
             ", [$tahun]);
 
             DB::commit();
+
+            SystemLogService::logActivity([
+                'category' => 'posting',
+                'title' => 'Unposting Data: ' . $session->nama_posting,
+                'description' => "Data aktif TA {$tahun} digantikan dari arsip {$session->nama_posting}.",
+                'status' => 'warning',
+                'tahun_anggaran' => $tahun,
+                'actor' => auth()->user()?->name ?? 'Admin',
+            ]);
 
             return response()->json([
                 'status' => 'success',

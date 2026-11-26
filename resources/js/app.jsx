@@ -55,6 +55,8 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(null);
   const [skpdList, setSkpdList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSkpdFilter, setSelectedSkpdFilter] = useState('all');
@@ -62,6 +64,7 @@ function App() {
   const [printViewSubKegiatanId, setPrintViewSubKegiatanId] = useState(null);
   const [printViewMode, setPrintViewMode] = useState('rincian'); // 'rincian' | 'paket'
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tahunAnggaran, setTahunAnggaran] = useState(() => {
     try {
       return localStorage.getItem('sipd_tahun_anggaran') || '2026';
@@ -106,28 +109,42 @@ function App() {
   };
 
   // 3. Ambil data statistik dan daftar SKPD sesuai tahun anggaran
-  const fetchGlobalData = async () => {
+  const fetchGlobalData = async (forceRefresh = false) => {
     setRefreshing(true);
+    setStatsError(null);
+    if (!stats) setStatsLoading(true);
     try {
       const params = new URLSearchParams({ tahun_anggaran: String(tahunAnggaran) });
+      if (forceRefresh) {
+        params.set('refresh', '1');
+      }
       const [resStats, resSkpd] = await Promise.all([
         fetch(`/api/data/stats?${params.toString()}`),
-        fetch(`/api/data/skpd-list?${params.toString()}`),
+        fetch(`/api/data/skpd-list?tahun_anggaran=${encodeURIComponent(String(tahunAnggaran))}`),
       ]);
 
+      if (!resStats.ok) {
+        throw new Error(`API statistik merespons HTTP ${resStats.status}`);
+      }
+
       const dataStats = await resStats.json();
-      const dataSkpd = await resSkpd.json();
+      const dataSkpd = resSkpd.ok ? await resSkpd.json() : { status: 'error' };
 
       if (dataStats.status === 'success') {
         setStats(dataStats.data);
+      } else {
+        throw new Error(dataStats.message || 'Gagal memuat statistik dashboard.');
       }
+
       if (dataSkpd.status === 'success') {
         setSkpdList(dataSkpd.data || []);
       }
     } catch (err) {
       console.error('Error fetching global data:', err);
+      setStatsError(err.message || 'Gagal terhubung ke API server lokal.');
     } finally {
       setRefreshing(false);
+      setStatsLoading(false);
     }
   };
 
@@ -151,7 +168,7 @@ function App() {
   }, [user, tahunAnggaran]);
 
   const handleRefreshAll = async () => {
-    await Promise.all([fetchAvailableYears(), fetchGlobalData()]);
+    await Promise.all([fetchAvailableYears(), fetchGlobalData(true)]);
   };
 
   const handleLogout = async () => {
@@ -184,7 +201,7 @@ function App() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-700 text-xs">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="font-semibold text-slate-600">Memuat sesi SIPD Local...</span>
+          <span className="font-semibold text-slate-600">Memuat sesi SADA SIPD...</span>
         </div>
       </div>
     );
@@ -247,7 +264,10 @@ function App() {
         onLogout={handleLogout}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
+        mobileOpen={mobileMenuOpen}
+        setMobileOpen={setMobileMenuOpen}
         tahunAnggaran={tahunAnggaran}
+        dbInfo={stats?.monitoring?.database}
       />
 
       {/* Konten Kanan (Fixed Height dengan Scroll Area Sendiri) */}
@@ -258,6 +278,8 @@ function App() {
           refreshing={refreshing}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
+          mobileOpen={mobileMenuOpen}
+          setMobileOpen={setMobileMenuOpen}
           tahunAnggaran={tahunAnggaran}
           setTahunAnggaran={(val) => {
             setSelectedSkpdFilter('all');
@@ -266,10 +288,11 @@ function App() {
             setTahunAnggaran(String(val));
           }}
           availableYears={availableYears}
+          dbInfo={stats?.monitoring?.database}
         />
 
         {/* Hanya Konten di Bawah Ini Yang Bergeser / Scroll */}
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-auto">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
           {printViewSubKegiatanId ? (
             <RkaPrintView
               subKegiatanId={printViewSubKegiatanId}
@@ -281,7 +304,12 @@ function App() {
               {activeTab === 'dashboard' && (
                 <Dashboard
                   stats={stats}
+                  loading={statsLoading}
+                  error={statsError}
+                  refreshing={refreshing}
+                  onRetry={() => fetchGlobalData(true)}
                   onNavigate={(tab) => setActiveTab(tab)}
+                  onSelectSkpd={handleSelectSkpdFromList}
                   tahunAnggaran={tahunAnggaran}
                 />
               )}

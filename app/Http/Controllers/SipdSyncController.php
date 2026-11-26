@@ -15,6 +15,7 @@ use App\Models\PendapatanSkpd;
 use App\Models\Pembiayaan;
 use App\Models\PembiayaanSkpd;
 use App\Models\DataUnit;
+use App\Services\SystemLogService;
 
 class SipdSyncController extends Controller
 {
@@ -49,35 +50,99 @@ class SipdSyncController extends Controller
             ]);
         }
 
-        if ($action === 'set_unit_pagu') {
-            return $this->setUnitPagu($request);
-        }
+        $startTime = microtime(true);
+        $tahun = $request->input('tahun_anggaran');
 
-        if ($action === 'update_nonactive_sub_bl') {
-            return $this->updateNonactiveSubBl($request);
-        }
+        $typeLabels = [
+            'set_unit_pagu' => 'Pagu Unit SKPD',
+            'update_nonactive_sub_bl' => 'Nonaktif Sub Kegiatan',
+            'singkron_akun_belanja' => 'Master Akun Belanja',
+            'singkron_sumber_dana' => 'Master Sumber Dana',
+            'singkron_pendapatan' => 'Pendapatan Daerah',
+            'singkron_pendapatan_skpd' => 'Pendapatan per SKPD',
+            'singkron_pembiayaan' => 'Pembiayaan Daerah',
+            'singkron_pembiayaan_skpd' => 'Pembiayaan per SKPD',
+            'singkron_unit' => 'Master SKPD / Unit',
+            'singkron_rka' => 'Sub Kegiatan & Rincian RKA',
+        ];
+        $dataType = $typeLabels[$action] ?? $action;
 
-        if ($action === 'singkron_akun_belanja') {
-            return $this->syncMasterAkun($request);
-        }
+        try {
+            if ($action === 'set_unit_pagu') {
+                $response = $this->setUnitPagu($request);
+            } elseif ($action === 'update_nonactive_sub_bl') {
+                $response = $this->updateNonactiveSubBl($request);
+            } elseif ($action === 'singkron_akun_belanja') {
+                $response = $this->syncMasterAkun($request);
+            } elseif ($action === 'singkron_sumber_dana') {
+                $response = $this->syncSumberDana($request);
+            } elseif ($action === 'singkron_pendapatan' || $action === 'singkron_pendapatan_skpd') {
+                $response = $this->syncPendapatan($request);
+            } elseif ($action === 'singkron_pembiayaan' || $action === 'singkron_pembiayaan_skpd') {
+                $response = $this->syncPembiayaan($request);
+            } elseif ($action === 'singkron_unit') {
+                $response = $this->syncUnit($request);
+            } else {
+                $response = $this->syncRka($request);
+            }
 
-        if ($action === 'singkron_sumber_dana') {
-            return $this->syncSumberDana($request);
-        }
+            $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+            $payload = method_exists($response, 'getData') ? $response->getData(true) : [];
+            $isSuccess = ($payload['status'] ?? 'success') === 'success';
+            $processed = (int) ($payload['processed'] ?? $payload['count'] ?? $payload['total'] ?? 1);
+            $failed = (int) ($payload['failed'] ?? 0);
 
-        if ($action === 'singkron_pendapatan' || $action === 'singkron_pendapatan_skpd') {
-            return $this->syncPendapatan($request);
-        }
+            SystemLogService::logSync([
+                'action' => $action,
+                'data_type' => $dataType,
+                'tahun_anggaran' => $tahun,
+                'status' => $isSuccess ? ($failed > 0 ? 'partial' : 'success') : 'error',
+                'processed_count' => $isSuccess ? max($processed, 1) : 0,
+                'failed_count' => $isSuccess ? $failed : max($failed, 1),
+                'message' => $payload['message'] ?? ($isSuccess ? "Sinkronisasi {$dataType} selesai" : 'Sinkronisasi gagal'),
+                'error_detail' => $isSuccess ? null : ($payload['error'] ?? $payload['message'] ?? null),
+                'source' => 'extension',
+                'ip_address' => $request->ip(),
+                'duration_ms' => $durationMs,
+            ]);
 
-        if ($action === 'singkron_pembiayaan' || $action === 'singkron_pembiayaan_skpd') {
-            return $this->syncPembiayaan($request);
-        }
+            SystemLogService::logActivity([
+                'category' => 'sync',
+                'title' => "Sinkronisasi {$dataType}",
+                'description' => $payload['message'] ?? ($isSuccess ? 'Data berhasil disinkronkan dari extension.' : 'Terjadi kesalahan saat sinkronisasi.'),
+                'status' => $isSuccess ? 'success' : 'error',
+                'tahun_anggaran' => $tahun,
+                'actor' => 'Chrome Extension',
+            ]);
 
-        if ($action === 'singkron_unit') {
-            return $this->syncUnit($request);
-        }
+            return $response;
+        } catch (\Throwable $e) {
+            $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+            SystemLogService::logSync([
+                'action' => $action,
+                'data_type' => $dataType,
+                'tahun_anggaran' => $tahun,
+                'status' => 'error',
+                'processed_count' => 0,
+                'failed_count' => 1,
+                'message' => "Gagal sinkronisasi {$dataType}",
+                'error_detail' => $e->getMessage(),
+                'source' => 'extension',
+                'ip_address' => $request->ip(),
+                'duration_ms' => $durationMs,
+            ]);
 
-        return $this->syncRka($request);
+            SystemLogService::logActivity([
+                'category' => 'sync',
+                'title' => "Gagal Sinkronisasi {$dataType}",
+                'description' => $e->getMessage(),
+                'status' => 'error',
+                'tahun_anggaran' => $tahun,
+                'actor' => 'Chrome Extension',
+            ]);
+
+            throw $e;
+        }
     }
 
     /**

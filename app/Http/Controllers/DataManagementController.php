@@ -17,6 +17,8 @@ use App\Models\PembiayaanSkpd;
 use App\Models\DataUnit;
 use App\Services\SqlImportService;
 use App\Services\SqlExportService;
+use App\Services\DashboardAnalyticsService;
+use App\Services\SystemLogService;
 
 class DataManagementController extends Controller
 {
@@ -68,51 +70,13 @@ class DataManagementController extends Controller
     }
 
     /**
-     * Ambil data statistik ringkasan
+     * Ambil data statistik ringkasan, grafik, dan monitoring dashboard
      */
-    public function getStats(Request $request)
+    public function getStats(Request $request, DashboardAnalyticsService $analytics)
     {
-        $tahun = $request->input('tahun_anggaran');
-        $filterTahun = ($tahun && $tahun !== 'all') ? (int) $tahun : null;
-
-        $applyTahun = fn ($query) => $filterTahun ? $query->where('tahun_anggaran', $filterTahun) : $query;
-
-        $totalSubKeg = $applyTahun(SubKegiatanBl::where('active', 1))->count();
-        $totalPagu = (float) $applyTahun(SubKegiatanBl::where('active', 1))->sum('pagu');
-        $totalRka = $applyTahun(Rka::where('active', 1))->count();
-        $totalRkaNilai = (float) $applyTahun(Rka::where('active', 1))->sum('total_harga');
-        $totalAkun = $applyTahun(MasterAkun::where('active', 1))->count();
-        $totalSumberDana = $applyTahun(MasterSumberDana::where('active', 1))->count();
-        $totalPendapatanItem = $applyTahun(Pendapatan::where('active', 1))->count();
-        $totalPendapatanNilai = (float) $applyTahun(Pendapatan::where('active', 1))->sum('total');
-
-        $totalPembiayaanPenerimaan = (float) $applyTahun(Pembiayaan::where('tipe', 'penerimaan')->where('active', 1))->sum('total');
-        $totalPembiayaanPengeluaran = (float) $applyTahun(Pembiayaan::where('tipe', 'pengeluaran')->where('active', 1))->sum('total');
-
-        $skpdCount = $applyTahun(SubKegiatanBl::where('active', 1))
-            ->distinct('id_skpd')
-            ->count('id_skpd');
-
-        $subUnitCount = $applyTahun(SubKegiatanBl::where('active', 1))
-            ->distinct('kode_sub_skpd')
-            ->count('kode_sub_skpd');
-
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'total_sub_kegiatan' => $totalSubKeg,
-                'total_pagu' => $totalPagu,
-                'total_rka_item' => $totalRka,
-                'total_rka_nilai' => $totalRkaNilai,
-                'total_skpd' => $skpdCount,
-                'total_sub_unit' => $subUnitCount,
-                'total_master_akun' => $totalAkun,
-                'total_sumber_dana' => $totalSumberDana,
-                'total_pendapatan_item' => $totalPendapatanItem,
-                'total_pendapatan_nilai' => $totalPendapatanNilai,
-                'total_pembiayaan_penerimaan' => $totalPembiayaanPenerimaan,
-                'total_pembiayaan_pengeluaran' => $totalPembiayaanPengeluaran,
-            ]
+            'data' => $analytics->getStatsPayload($request),
         ]);
     }
 
@@ -424,6 +388,15 @@ class DataManagementController extends Controller
                 ? "Seluruh database Tahun Anggaran {$filterTahun} berhasil dikosongkan!"
                 : 'Seluruh database berhasil dikosongkan total (Belanja & RKA, Pendapatan, Pembiayaan, dan Data Master kembali bersih ke nol)!';
 
+            SystemLogService::logActivity([
+                'category' => 'reset',
+                'title' => 'Pembersihan Seluruh Data',
+                'description' => $msg,
+                'status' => 'warning',
+                'tahun_anggaran' => $filterTahun,
+                'actor' => auth()->user()?->name ?? 'Admin',
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'message' => $msg
@@ -484,9 +457,20 @@ class DataManagementController extends Controller
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
             $tahunLabel = $filterTahun ? " Tahun Anggaran {$filterTahun}" : '';
+            $msg = "Seluruh data modul {$label}{$tahunLabel} berhasil dikosongkan!";
+
+            SystemLogService::logActivity([
+                'category' => 'reset',
+                'title' => 'Pembersihan Modul: ' . ucfirst($module),
+                'description' => $msg,
+                'status' => 'warning',
+                'tahun_anggaran' => $filterTahun,
+                'actor' => auth()->user()?->name ?? 'Admin',
+            ]);
+
             return response()->json([
                 'status' => 'success',
-                'message' => "Seluruh data modul {$label}{$tahunLabel} berhasil dikosongkan!"
+                'message' => $msg
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1072,9 +1056,20 @@ class DataManagementController extends Controller
                 ? ' Pagu pada ' . number_format($result['pagu_synced_rows'], 0, ',', '.') . ' sub kegiatan disinkronkan dari rincian RKA.'
                 : '';
 
+            $msg = "Import TA {$tahunAnggaran} berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke {$importedTablesCount} tabel dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote;
+
+            SystemLogService::logActivity([
+                'category' => 'import',
+                'title' => "Import Database SQL (TA {$tahunAnggaran})",
+                'description' => $msg,
+                'status' => 'success',
+                'tahun_anggaran' => $tahunAnggaran,
+                'actor' => auth()->user()?->name ?? 'Admin',
+            ]);
+
             return response()->json([
                 'status' => 'success',
-                'message' => "Import TA {$tahunAnggaran} berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke {$importedTablesCount} tabel dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
+                'message' => $msg,
                 'data' => array_merge($result, ['total_rows' => $totalRows]),
             ]);
         } catch (\Throwable $e) {
@@ -1171,9 +1166,19 @@ class DataManagementController extends Controller
             'status_kepala' => $validated['status_kepala'] !== '' ? $validated['status_kepala'] : null,
         ]);
 
+        $msg = "Data Kepala {$unit->nama_skpd} berhasil diperbarui.";
+        SystemLogService::logActivity([
+            'category' => 'master',
+            'title' => 'Perubahan Master SKPD',
+            'description' => $msg,
+            'status' => 'info',
+            'tahun_anggaran' => $unit->tahun_anggaran,
+            'actor' => auth()->user()?->name ?? 'Admin',
+        ]);
+
         return response()->json([
             'status' => 'success',
-            'message' => "Data Kepala {$unit->nama_skpd} berhasil diperbarui.",
+            'message' => $msg,
             'data' => $unit,
         ]);
     }

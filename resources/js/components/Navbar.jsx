@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Server, RefreshCw, Menu, ChevronDown, Check } from 'lucide-react';
+import { Calendar, Server, RefreshCw, Menu, ChevronDown, Check, AlertCircle } from 'lucide-react';
 
 export default function Navbar({
   activeTab,
@@ -7,9 +7,12 @@ export default function Navbar({
   refreshing,
   collapsed,
   setCollapsed,
+  mobileOpen,
+  setMobileOpen,
   tahunAnggaran = '2026',
   setTahunAnggaran,
   availableYears = [2027, 2026, 2025],
+  dbInfo = null,
 }) {
   const [yearOpen, setYearOpen] = useState(false);
   const yearMenuRef = useRef(null);
@@ -30,6 +33,7 @@ export default function Navbar({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
   const titles = {
     dashboard: 'Ringkasan & Statistik Anggaran',
     skpd: 'Belanja & RKA: Rekap Perangkat Daerah',
@@ -46,33 +50,55 @@ export default function Navbar({
     'rka-print': 'Dokumen Formulir Cetak RKA (A4 Landscape)',
   };
 
+  const dbStatus = dbInfo?.status || 'unknown';
+  const isDbConnected = dbStatus === 'connected';
+  const isDbError = dbStatus === 'error';
+  const dbLabel = dbInfo?.name
+    ? `${dbInfo.name}${dbInfo.port ? `:${dbInfo.port}` : ''}`
+    : 'db_sipd:3306';
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 1024) {
+      if (setMobileOpen) setMobileOpen(!mobileOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
+  };
+
   return (
-    <header className="h-16 px-6 bg-white border-b border-slate-200 flex items-center justify-between shadow-xs shrink-0 z-20 print:hidden">
-      <div className="flex items-center gap-3">
-        {/* Toggle Sidebar Button di Navbar */}
+    <header className="h-16 px-4 sm:px-6 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shrink-0 z-20 print:hidden">
+      <div className="flex items-center gap-3 min-w-0">
         <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+          type="button"
+          onClick={handleToggleSidebar}
+          aria-label="Toggle navigasi sidebar"
+          className="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           title={collapsed ? 'Buka Sidebar' : 'Tutup Sidebar'}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" aria-hidden="true" />
         </button>
 
-        <h2 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">
+        <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight truncate">
           {titles[activeTab] || 'Dashboard'}
         </h2>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
         {/* Refresh button */}
         <button
+          type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+          aria-busy={refreshing}
+          aria-label="Muat ulang data dashboard"
+          className="min-h-[40px] px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-70 text-slate-700 transition cursor-pointer disabled:cursor-not-allowed flex items-center gap-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           title="Muat ulang data terbaru"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
-          <span className="hidden sm:inline">Refresh Data</span>
+          <RefreshCw
+            className={`w-3.5 h-3.5 shrink-0 ${refreshing ? 'animate-spin text-indigo-600' : 'text-slate-600'}`}
+            aria-hidden="true"
+          />
+          <span className="hidden sm:inline">{refreshing ? 'Memuat...' : 'Refresh Data'}</span>
         </button>
 
         {/* Tahun Anggaran Custom Dropdown */}
@@ -83,18 +109,19 @@ export default function Navbar({
             aria-haspopup="listbox"
             aria-expanded={yearOpen}
             aria-label="Pilih Tahun Anggaran"
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+            className={`min-h-[40px] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
               yearOpen
-                ? 'bg-indigo-100 border-indigo-300 text-indigo-800 shadow-xs'
+                ? 'bg-indigo-100 border-indigo-300 text-indigo-800'
                 : 'bg-indigo-50 hover:bg-indigo-100/80 border-indigo-200 text-indigo-700'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-            <span>TAHUN {tahunAnggaran}</span>
+            <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" aria-hidden="true" />
+            <span>TA {tahunAnggaran}</span>
             <ChevronDown
-              className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-150 ${
+              className={`w-3.5 h-3.5 text-indigo-600 transition-transform duration-150 ${
                 yearOpen ? 'rotate-180' : ''
               }`}
+              aria-hidden="true"
             />
           </button>
 
@@ -104,7 +131,7 @@ export default function Navbar({
               aria-label="Daftar Tahun Anggaran"
               className="absolute right-0 mt-2 w-44 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-50"
             >
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Tahun Anggaran
               </div>
               {availableYears.map((yr) => {
@@ -119,14 +146,14 @@ export default function Navbar({
                       if (setTahunAnggaran) setTahunAnggaran(String(yr));
                       setYearOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-xs transition cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 text-xs transition cursor-pointer focus-visible:outline-none focus-visible:bg-indigo-50 ${
                       isSelected
                         ? 'bg-indigo-50 text-indigo-700 font-bold'
                         : 'text-slate-700 hover:bg-slate-50 font-medium'
                     }`}
                   >
                     <span>TAHUN {yr}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" aria-hidden="true" />}
                   </button>
                 );
               })}
@@ -134,10 +161,34 @@ export default function Navbar({
           )}
         </div>
 
-        {/* Status Database */}
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
-          <Server className="w-3.5 h-3.5 text-emerald-600" />
-          <span>db_sipd: 3306</span>
+        {/* Status Koneksi Database */}
+        <div
+          className={`hidden md:flex min-h-[40px] items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+            isDbError
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : isDbConnected
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-amber-50 border-amber-200 text-amber-800'
+          }`}
+          title={isDbError ? `Koneksi database bermasalah: ${dbInfo?.error || ''}` : `Database terhubung: ${dbLabel}`}
+        >
+          {isDbError ? (
+            <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" aria-hidden="true" />
+          ) : (
+            <Server
+              className={`w-3.5 h-3.5 shrink-0 ${isDbConnected ? 'text-emerald-700' : 'text-amber-600'}`}
+              aria-hidden="true"
+            />
+          )}
+          <span className="truncate max-w-[140px]">
+            {isDbError ? 'DB Terputus' : dbLabel}
+          </span>
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isDbError ? 'bg-rose-600' : isDbConnected ? 'bg-emerald-600' : 'bg-amber-500 animate-pulse'
+            }`}
+            aria-hidden="true"
+          />
         </div>
       </div>
     </header>
