@@ -888,9 +888,43 @@ class PostingController extends Controller
         $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
         $data = $query->orderBy('kode_sub_giat')->paginate($perPage);
 
+        $skpdFilterForCount = null;
+        if ($request->filled('sub_skpd') && $request->input('sub_skpd') !== 'all') {
+            $skpdFilterForCount = $request->input('sub_skpd');
+        } elseif ($request->filled('skpd') && $request->input('skpd') !== 'all') {
+            $skpdFilterForCount = $request->input('skpd');
+        }
+
+        $tabCounts = null;
+        if ($skpdFilterForCount) {
+            $pendCount = DB::table('posting_pendapatan')
+                ->where('posting_id', $postingId)
+                ->where(function ($q) use ($skpdFilterForCount) {
+                    $q->where('nama_skpd', $skpdFilterForCount)
+                      ->orWhere('kode_skpd', $skpdFilterForCount)
+                      ->orWhere('id_skpd', $skpdFilterForCount);
+                })
+                ->count();
+
+            $pembCount = DB::table('posting_pembiayaan')
+                ->where('posting_id', $postingId)
+                ->where(function ($q) use ($skpdFilterForCount) {
+                    $q->where('nama_skpd', $skpdFilterForCount)
+                      ->orWhere('kode_skpd', $skpdFilterForCount)
+                      ->orWhere('id_skpd', $skpdFilterForCount);
+                })
+                ->count();
+
+            $tabCounts = [
+                'pendapatan' => $pendCount,
+                'pembiayaan' => $pembCount,
+            ];
+        }
+
         return response()->json([
             'status' => 'success',
             'data' => $data,
+            'tab_counts' => $tabCounts,
         ]);
     }
 

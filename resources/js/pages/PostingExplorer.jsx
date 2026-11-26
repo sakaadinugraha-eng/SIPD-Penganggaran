@@ -74,6 +74,7 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
   const [pembiayaanPage, setPembiayaanPage] = useState(1);
   const [pembiayaanLoading, setPembiayaanLoading] = useState(false);
   const [pembiayaanSummary, setPembiayaanSummary] = useState(0);
+  const [skpdTabCounts, setSkpdTabCounts] = useState(null);
 
   const formatRupiah = (val) => {
     return 'Rp ' + Number(val || 0).toLocaleString('id-ID', {
@@ -160,6 +161,9 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
           from: json.data.from,
           to: json.data.to,
         });
+        if (json.tab_counts) {
+          setSkpdTabCounts(json.tab_counts);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -360,7 +364,9 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
           }`}
         >
           <ShoppingBag className="w-4 h-4" />
-          <span>Belanja & RKA ({session.jumlah_sub_kegiatan} Sub Giat)</span>
+          <span>
+            Belanja &amp; RKA ({activeSkpdFilter && subPagination.total !== undefined ? subPagination.total : session.jumlah_sub_kegiatan} Sub Giat)
+          </span>
         </button>
 
         <button
@@ -372,7 +378,9 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          <span>Pendapatan Daerah ({session.jumlah_rekening_pendapatan} Rekening)</span>
+          <span>
+            Pendapatan Daerah ({activeSkpdFilter && skpdTabCounts ? skpdTabCounts.pendapatan : session.jumlah_rekening_pendapatan} Rekening)
+          </span>
         </button>
 
         <button
@@ -384,7 +392,9 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
           }`}
         >
           <Scale className="w-4 h-4" />
-          <span>Pembiayaan Daerah ({session.jumlah_rekening_pembiayaan} Rekening)</span>
+          <span>
+            Pembiayaan Daerah ({activeSkpdFilter && skpdTabCounts ? skpdTabCounts.pembiayaan : session.jumlah_rekening_pembiayaan} Rekening)
+          </span>
         </button>
       </div>
 
