@@ -67,7 +67,10 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
   const [pembiayaanSummary, setPembiayaanSummary] = useState(0);
 
   const formatRupiah = (val) => {
-    return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+    return 'Rp ' + Number(val || 0).toLocaleString('id-ID', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   // 1. Fetch SKPD List in Posting

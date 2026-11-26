@@ -59,6 +59,11 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
   const [showInlineAddTahap, setShowInlineAddTahap] = useState(false);
   const [inlineTahapName, setInlineTahapName] = useState('');
 
+  // Filter & Sort State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTahap, setFilterTahap] = useState('all');
+  const [sortOrder, setSortOrder] = useState('newest'); // 'newest' | 'oldest'
+
   // Form State
   const [formData, setFormData] = useState({
     nama_posting: '',
@@ -67,7 +72,52 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
   });
 
   const formatRupiah = (val) => {
-    return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+    return 'Rp ' + Number(val || 0).toLocaleString('id-ID', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const formatShortScale = (val) => {
+    const num = Number(val || 0);
+    const abs = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
+    if (abs >= 1e12) {
+      return `${sign}Rp ${(abs / 1e12).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} T`;
+    }
+    if (abs >= 1e9) {
+      return `${sign}Rp ${(abs / 1e9).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} M`;
+    }
+    if (abs >= 1e6) {
+      return `${sign}Rp ${(abs / 1e6).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Jt`;
+    }
+    return formatRupiah(num);
+  };
+
+  const formatScaleWords = (val) => {
+    const num = Number(val || 0);
+    const abs = Math.abs(num);
+    if (abs === 0) return 'Nol rupiah';
+    const sign = num < 0 ? '-' : '';
+    if (abs >= 1e12) {
+      return `≈ ${sign}${(abs / 1e12).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Triliun`;
+    }
+    if (abs >= 1e9) {
+      return `≈ ${sign}${(abs / 1e9).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Miliar`;
+    }
+    if (abs >= 1e6) {
+      return `≈ ${sign}${(abs / 1e6).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Juta`;
+    }
+    return formatRupiah(num);
+  };
+
+  const isSyncedWithActive = (s) => {
+    if (!activeStats || !s) return false;
+    return (
+      Math.abs(Number(s.total_belanja || 0) - Number(activeStats.total_belanja || 0)) < 0.01 &&
+      Math.abs(Number(s.total_pendapatan || 0) - Number(activeStats.total_pendapatan || 0)) < 0.01 &&
+      Math.abs(Number(s.total_pembiayaan_netto || 0) - Number(activeStats.total_pembiayaan_netto || 0)) < 0.01
+    );
   };
 
   const formatDate = (dateStr) => {
@@ -383,34 +433,57 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
     );
   }
 
+  const latestSession = sessions[0] || null;
+  const latestIsSynced = latestSession ? isSyncedWithActive(latestSession) : false;
+
+  const uniqueTahapOptions = Array.from(new Set(sessions.map((s) => s.tahap).filter(Boolean)));
+
+  const filteredSessions = sessions
+    .filter((s) => {
+      if (filterTahap !== 'all' && s.tahap !== filterTahap) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTahap = (s.tahap || '').toLowerCase().includes(q);
+        const matchNama = (s.nama_posting || '').toLowerCase().includes(q);
+        const matchKet = (s.keterangan || '').toLowerCase().includes(q);
+        const matchUser = (s.posted_by || '').toLowerCase().includes(q);
+        return matchTahap || matchNama || matchKet || matchUser;
+      }
+      return true;
+    })
+    .sort((a, b) => (sortOrder === 'oldest' ? a.id - b.id : b.id - a.id));
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header Halaman */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
-              <BookmarkCheck className="w-5 h-5" />
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0">
+            <BookmarkCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Posting Data Anggaran</h1>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-bold">
+                TA {tahunAnggaran}
+              </span>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Posting Data Anggaran</h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Kelola snapshot versi anggaran, perbarui (tindih) postingan, atau unposting untuk memulihkan data aktif
-              </p>
-            </div>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Pantau kondisi anggaran aktif, kelola arsip snapshot, perbarui (tindih), atau pulihkan (unposting) data
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {activeStats && (
             <button
               onClick={() => setShowActiveStatsModal(true)}
               className="px-3.5 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shadow-xs"
               title={`Lihat Ringkasan Data Aktif Berjalan TA ${tahunAnggaran}`}
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
               <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Data Aktif TA {tahunAnggaran}</span>
+              <span>Detail Data Aktif</span>
             </button>
           )}
 
@@ -443,19 +516,134 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
         </div>
       </div>
 
+      {/* 4 Kartu Ringkasan Eksekutif (Enterprise Summary Strip) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total Posting</p>
+            <p className="text-xl font-extrabold text-slate-900 tabular-nums mt-0.5">{sessions.length}</p>
+            <p className="text-[11px] text-slate-400 truncate">Arsip snapshot TA {tahunAnggaran}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Posting Terbaru</p>
+            <p className="text-sm font-bold text-slate-900 truncate mt-0.5">
+              {latestSession ? latestSession.tahap : 'Belum ada'}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate">
+              {latestSession ? formatDate(latestSession.last_synced_at || latestSession.created_at) : 'Belum ada snapshot'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => activeStats && setShowActiveStatsModal(true)}
+          className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 p-4 shadow-xs flex items-center gap-3.5 text-left transition cursor-pointer"
+          title="Klik untuk melihat rincian Data Aktif Berjalan"
+        >
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <ShoppingBag className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total Belanja Aktif</p>
+            <p className="text-lg font-extrabold text-indigo-700 tabular-nums truncate mt-0.5">
+              {activeStats ? formatShortScale(activeStats.total_belanja) : '-'}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate tabular-nums">
+              {activeStats ? `${activeStats.jumlah_skpd} SKPD • ${activeStats.jumlah_sub_kegiatan} Sub Giat` : 'Memuat...'}
+            </p>
+          </div>
+        </button>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center gap-3.5">
+          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+            latestSession && latestIsSynced
+              ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+              : 'bg-amber-50 border-amber-100 text-amber-600'
+          }`}>
+            {latestSession && latestIsSynced ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertTriangle className="w-5 h-5" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Status Sinkronisasi</p>
+            <p className={`text-sm font-bold truncate mt-0.5 ${
+              latestSession && latestIsSynced ? 'text-emerald-700' : 'text-amber-700'
+            }`}>
+              {!latestSession
+                ? 'Belum Diposting'
+                : latestIsSynced
+                ? 'Selaras Data Aktif'
+                : 'Ada Perubahan Aktif'}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate">
+              {!latestSession
+                ? 'Silakan posting data aktif'
+                : latestIsSynced
+                ? `Sama dengan ${latestSession.tahap}`
+                : 'Data aktif berbeda dari arsip terakhir'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Daftar Riwayat Sesi Posting */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+        {/* Header & Toolbar Filter */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Layers className="w-4 h-4 text-indigo-600" />
-            <h2 className="text-sm font-bold text-slate-800">Daftar Arsip & Snapshot Posting</h2>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-              {sessions.length} Posting
+            <h2 className="text-sm font-bold text-slate-800">Daftar Arsip &amp; Snapshot Posting</h2>
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold tabular-nums">
+              {filteredSessions.length}{filteredSessions.length !== sessions.length ? ` / ${sessions.length}` : ''} Posting
             </span>
           </div>
-          <p className="text-xs text-slate-400 hidden sm:block">
-            Pilih postingan untuk melihat rincian, menindih, atau unposting
-          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari tahapan atau catatan..."
+                className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48 sm:w-56"
+              />
+            </div>
+
+            {uniqueTahapOptions.length > 1 && (
+              <select
+                value={filterTahap}
+                onChange={(e) => setFilterTahap(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="all">Semua Tahapan</option>
+                {uniqueTahapOptions.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            )}
+
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="newest">Terbaru Dulu</option>
+              <option value="oldest">Terlama Dulu</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -463,41 +651,61 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
             <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
             <p className="text-xs font-medium text-slate-500">Memuat data posting...</p>
           </div>
-        ) : sessions.length === 0 ? (
+        ) : filteredSessions.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 mx-auto mb-3">
               <BookmarkCheck className="w-7 h-7" />
             </div>
-            <h3 className="text-sm font-bold text-slate-800">Belum Ada Data Posting</h3>
+            <h3 className="text-sm font-bold text-slate-800">
+              {sessions.length === 0 ? 'Belum Ada Data Posting' : 'Tidak Ada Hasil yang Cocok'}
+            </h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-5">
-              Anda belum memiliki arsip postingan anggaran. Klik tombol di bawah untuk membekukan data aktif saat ini menjadi snapshot posting pertama.
+              {sessions.length === 0
+                ? `Anda belum memiliki arsip postingan anggaran untuk TA ${tahunAnggaran}. Klik tombol di bawah untuk membekukan data aktif saat ini.`
+                : 'Coba ubah kata kunci pencarian atau filter tahapan.'}
             </p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition cursor-pointer shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Posting Data Aktif Sekarang</span>
-            </button>
+            {sessions.length === 0 && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-2 transition cursor-pointer shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Posting Data Aktif Sekarang</span>
+              </button>
+            )}
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {sessions.map((s, idx) => (
-              <div key={s.id} className="p-5 hover:bg-slate-50/70 transition flex flex-col gap-4">
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                  {/* Nomor Daftar + Info Utama Sesi */}
-                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5 tabular-nums">
-                      {idx + 1}
-                    </div>
-
-                    <div className="space-y-1.5 min-w-0 flex-1">
+          <div className="p-4 sm:p-5 space-y-4 bg-slate-50/40">
+            {filteredSessions.map((s, idx) => {
+              const synced = isSyncedWithActive(s);
+              const surplus = Number(s.total_pendapatan || 0) - Number(s.total_belanja || 0);
+              return (
+                <div
+                  key={s.id}
+                  className={`bg-white rounded-2xl border p-5 transition shadow-2xs hover:shadow-sm flex flex-col gap-4 ${
+                    synced ? 'border-emerald-200 ring-1 ring-emerald-100' : 'border-slate-200'
+                  }`}
+                >
+                  {/* Baris Atas: Nomor Daftar + Status + Nama Tahapan + Metadata */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1.5 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
-                          {s.tahap}
+                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold tabular-nums">
+                          #{idx + 1}
                         </span>
+                        {synced ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Selaras Data Aktif</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-semibold">
+                            Arsip Snapshot
+                          </span>
+                        )}
+                        <h3 className="text-base font-bold text-slate-900 tracking-tight">{s.tahap}</h3>
                         {s.nama_posting && s.nama_posting !== s.tahap && (
-                          <span className="text-xs font-semibold text-slate-700 truncate">{s.nama_posting}</span>
+                          <span className="text-xs font-medium text-slate-500">({s.nama_posting})</span>
                         )}
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-semibold">
                           TA {s.tahun_anggaran}
@@ -505,11 +713,10 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
                       </div>
 
                       {s.keterangan && (
-                        <p className="text-xs text-slate-600 line-clamp-1">{s.keterangan}</p>
+                        <p className="text-xs text-slate-600">{s.keterangan}</p>
                       )}
 
-                      {/* Metadata & Timestamp */}
-                      <div className="flex items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 flex-wrap">
+                      <div className="flex items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 flex-wrap pt-0.5">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           <span>Diposting: <strong className="text-slate-700">{formatDate(s.created_at)}</strong></span>
@@ -526,72 +733,117 @@ export default function PostingData({ tahunAnggaran = '2026' }) {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{s.jumlah_skpd} SKPD &bull; {s.jumlah_sub_kegiatan} Sub Giat</span>
+                          <span><strong className="text-slate-700">{s.jumlah_skpd}</strong> SKPD &bull; <strong className="text-slate-700">{Number(s.jumlah_sub_kegiatan || 0).toLocaleString('id-ID')}</strong> Sub Kegiatan</span>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-left sm:text-right">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">Surplus / (Defisit)</span>
+                      <span className={`text-xs font-bold tabular-nums ${surplus >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {formatRupiah(surplus)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Baris Tengah: Nominal Anggaran Sebagai Pusat Perhatian */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                    <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-slate-500 block">Belanja</span>
+                        <span className="text-sm sm:text-base font-extrabold text-indigo-700 tabular-nums whitespace-nowrap block">
+                          {formatRupiah(s.total_belanja)}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium block">{formatScaleWords(s.total_belanja)}</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-slate-500 block">Pendapatan</span>
+                        <span className="text-sm sm:text-base font-extrabold text-emerald-700 tabular-nums whitespace-nowrap block">
+                          {formatRupiah(s.total_pendapatan)}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium block">{formatScaleWords(s.total_pendapatan)}</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                        <Scale className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-slate-500 block">Pembiayaan Netto</span>
+                        <span className="text-sm sm:text-base font-extrabold text-slate-800 tabular-nums whitespace-nowrap block">
+                          {formatRupiah(s.total_pembiayaan_netto)}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium block">{formatScaleWords(s.total_pembiayaan_netto)}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-1.5 shrink-0 self-end xl:self-center">
-                    {/* Tombol Lihat Data Lengkap & Cetak RKA (Posting Explorer) */}
-                    <button
-                      onClick={() => setExploringSession(s)}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                      title="Jelajahi Rincian SKPD, Sub Kegiatan, dan Cetak RKA arsip ini"
-                    >
-                      <FolderOpen className="w-3.5 h-3.5" />
-                      <span>Lihat Data Lengkap</span>
-                    </button>
+                  {/* Baris Bawah: Status & Tombol Aksi Lengkap di Semua Tahapan */}
+                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                      {synced ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="text-emerald-700 font-medium">Nominal snapshot sama persis dengan data aktif berjalan.</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>Gunakan <strong>Tindih</strong> untuk memperbarui dari data aktif, atau <strong>Unposting</strong> untuk memulihkan.</span>
+                        </>
+                      )}
+                    </div>
 
-                    {/* Tombol Tindih Data Posting */}
-                    <button
-                      onClick={() => setConfirmAction({ type: 'overwrite', session: s })}
-                      className="px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                      title="Tindih postingan ini dengan Data Aktif saat ini"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Tindih</span>
-                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
+                      <button
+                        onClick={() => setExploringSession(s)}
+                        className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                        title="Jelajahi Rincian SKPD, Sub Kegiatan, dan Cetak RKA arsip ini"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>Lihat Data Lengkap</span>
+                      </button>
 
-                    {/* Tombol Unposting ke Data Aktif */}
-                    <button
-                      onClick={() => setConfirmAction({ type: 'unposting', session: s })}
-                      className="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                      title="Gantikan Data Aktif dengan data dari posting ini"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Unposting</span>
-                    </button>
+                      <button
+                        onClick={() => setConfirmAction({ type: 'overwrite', session: s })}
+                        className="px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                        title="Tindih postingan ini dengan Data Aktif saat ini"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Tindih</span>
+                      </button>
 
-                    {/* Tombol Hapus */}
-                    <button
-                      onClick={() => setConfirmAction({ type: 'delete', session: s })}
-                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer shadow-2xs"
-                      title="Hapus Sesi Posting"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <button
+                        onClick={() => setConfirmAction({ type: 'unposting', session: s })}
+                        className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                        title="Gantikan Data Aktif dengan data dari posting ini"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Unposting</span>
+                      </button>
+
+                      <button
+                        onClick={() => setConfirmAction({ type: 'delete', session: s })}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                        title="Hapus Sesi Posting"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Baris Angka Ringkasan (Full Width agar angka tidak terpotong) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-0 sm:pl-11">
-                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Belanja</span>
-                    <span className="text-xs font-bold text-indigo-700 tabular-nums whitespace-nowrap">{formatRupiah(s.total_belanja)}</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Pendapatan</span>
-                    <span className="text-xs font-bold text-emerald-700 tabular-nums whitespace-nowrap">{formatRupiah(s.total_pendapatan)}</span>
-                  </div>
-                  <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold uppercase">Pembiayaan</span>
-                    <span className="text-xs font-bold text-slate-800 tabular-nums whitespace-nowrap">{formatRupiah(s.total_pembiayaan_netto)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
