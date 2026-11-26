@@ -237,26 +237,28 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
   return (
     <div className="space-y-6">
       {/* Top Banner Penjelajah Arsip Posting */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-4 border-b border-white/10 gap-4">
+      <div className="bg-white text-slate-800 p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-4 border-b border-slate-100 gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+              className="px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 transition cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
               title="Kembali ke Daftar Posting"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 text-slate-500" />
               <span>Daftar Posting</span>
             </button>
-            <div className="h-6 w-px bg-white/20"></div>
+            <div className="h-6 w-px bg-slate-200"></div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
                   ARSIP POSTING SNAPSHOT
                 </span>
-                <span className="text-xs text-slate-300 font-medium">&bull; TA {session.tahun_anggaran}</span>
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-semibold">
+                  TA {session.tahun_anggaran}
+                </span>
               </div>
-              <h1 className="text-lg font-bold text-white tracking-tight mt-0.5">{session.nama_posting}</h1>
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">{session.nama_posting}</h1>
             </div>
           </div>
 
@@ -273,23 +275,23 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
         </div>
 
         {/* Ringkasan Angka Posting */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-          <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-            <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total Belanja</span>
-            <span className="text-sm font-bold text-indigo-200 block mt-0.5">{formatRupiah(session.total_belanja)}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+          <div className="bg-slate-50/80 border border-slate-200/80 p-3.5 rounded-xl">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase block">Total Belanja</span>
+            <span className="text-sm sm:text-base font-extrabold text-indigo-700 tabular-nums block mt-0.5">{formatRupiah(session.total_belanja)}</span>
           </div>
-          <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-            <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total Pendapatan</span>
-            <span className="text-sm font-bold text-emerald-300 block mt-0.5">{formatRupiah(session.total_pendapatan)}</span>
+          <div className="bg-slate-50/80 border border-slate-200/80 p-3.5 rounded-xl">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase block">Total Pendapatan</span>
+            <span className="text-sm sm:text-base font-extrabold text-emerald-700 tabular-nums block mt-0.5">{formatRupiah(session.total_pendapatan)}</span>
           </div>
-          <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-            <span className="text-[10px] text-slate-400 font-semibold uppercase block">Pembiayaan Netto</span>
-            <span className="text-sm font-bold text-amber-200 block mt-0.5">{formatRupiah(session.total_pembiayaan_netto)}</span>
+          <div className="bg-slate-50/80 border border-slate-200/80 p-3.5 rounded-xl">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase block">Pembiayaan Netto</span>
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 tabular-nums block mt-0.5">{formatRupiah(session.total_pembiayaan_netto)}</span>
           </div>
-          <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-            <span className="text-[10px] text-slate-400 font-semibold uppercase block">Surplus / Defisit</span>
-            <span className={`text-sm font-bold block mt-0.5 ${
-              session.surplus_defisit >= 0 ? 'text-emerald-300' : 'text-rose-300'
+          <div className="bg-slate-50/80 border border-slate-200/80 p-3.5 rounded-xl">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase block">Surplus / (Defisit)</span>
+            <span className={`text-sm sm:text-base font-extrabold tabular-nums block mt-0.5 ${
+              session.surplus_defisit >= 0 ? 'text-emerald-700' : 'text-rose-600'
             }`}>
               {formatRupiah(session.surplus_defisit)}
             </span>
