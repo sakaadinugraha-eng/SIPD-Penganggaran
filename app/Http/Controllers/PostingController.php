@@ -770,6 +770,65 @@ class PostingController extends Controller
             ->where('posting_id', $postingId)
             ->sum('pagu');
 
+        // Struktur hirarki parent SKPD + sub-unit (Kantor Induk, RSUD, Puskesmas)
+        $hierarchyRows = DB::table('posting_sub_keg_bl')
+            ->where('posting_id', $postingId)
+            ->select(
+                'kode_skpd',
+                'nama_skpd',
+                'id_skpd',
+                'kode_sub_skpd',
+                'nama_sub_skpd',
+                'id_sub_skpd',
+                DB::raw('COUNT(*) as count_sub'),
+                DB::raw('SUM(pagu) as total_pagu')
+            )
+            ->groupBy('kode_skpd', 'nama_skpd', 'id_skpd', 'kode_sub_skpd', 'nama_sub_skpd', 'id_sub_skpd')
+            ->orderBy('kode_skpd')
+            ->orderBy('kode_sub_skpd')
+            ->get();
+
+        $hierarchyMap = [];
+        foreach ($hierarchyRows as $r) {
+            $parentCode = $r->kode_skpd ?: 'TANPA-KODE';
+            if (!isset($hierarchyMap[$parentCode])) {
+                $hierarchyMap[$parentCode] = [
+                    'kode_skpd' => $r->kode_skpd,
+                    'nama_skpd' => $r->nama_skpd,
+                    'id_skpd' => $r->id_skpd,
+                    'total_sub_keg' => 0,
+                    'total_pagu' => 0,
+                    'sub_units' => [],
+                ];
+            }
+
+            $hierarchyMap[$parentCode]['total_sub_keg'] += (int) $r->count_sub;
+            $hierarchyMap[$parentCode]['total_pagu'] += (float) $r->total_pagu;
+
+            $lower = strtolower($r->nama_sub_skpd ?? '');
+            $type = 'dinas';
+            if (str_contains($lower, 'rsud') || str_contains($lower, 'rumah sakit')) {
+                $type = 'rsud';
+            } elseif (str_contains($lower, 'puskesmas') || str_contains($lower, 'uptd')) {
+                $type = 'puskesmas';
+            }
+
+            $hierarchyMap[$parentCode]['sub_units'][] = [
+                'kode_sub_skpd' => $r->kode_sub_skpd,
+                'nama_sub_skpd' => $r->nama_sub_skpd,
+                'id_sub_skpd' => $r->id_sub_skpd,
+                'count_sub' => (int) $r->count_sub,
+                'total_pagu' => (float) $r->total_pagu,
+                'unit_type' => $type,
+            ];
+        }
+
+        $hierarchy = array_values(array_map(function ($skpd) {
+            $skpd['has_children'] = count($skpd['sub_units']) > 1
+                || (count($skpd['sub_units']) === 1 && $skpd['sub_units'][0]['kode_sub_skpd'] !== $skpd['kode_skpd']);
+            return $skpd;
+        }, $hierarchyMap));
+
         $perPage = $request->input('per_page', 25);
         if ($perPage === 'all' || (int)$perPage === -1) {
             $data = $base->get();
@@ -781,6 +840,7 @@ class PostingController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $data,
+            'hierarchy' => $hierarchy,
             'summary' => [
                 'total_skpd' => $totalSkpd,
                 'total_pagu' => $totalPagu,

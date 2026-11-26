@@ -14,10 +14,16 @@ import {
   Coins, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   Layers,
   FileText,
   SlidersHorizontal,
-  X
+  X,
+  FolderOpen,
+  Building,
+  Hospital,
+  Stethoscope,
+  ArrowUpRight
 } from 'lucide-react';
 import SubKegiatanDetailModal from './SubKegiatanDetailModal';
 import RkaPrintView from './RkaPrintView';
@@ -31,9 +37,12 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
   
   // SKPD List State
   const [skpdData, setSkpdData] = useState([]);
+  const [skpdHierarchy, setSkpdHierarchy] = useState([]);
+  const [expanded, setExpanded] = useState({});
   const [skpdPagination, setSkpdPagination] = useState({});
   const [skpdSearch, setSkpdSearch] = useState('');
   const [skpdPage, setSkpdPage] = useState(1);
+  const [skpdPerPage, setSkpdPerPage] = useState(15);
   const [skpdLoading, setSkpdLoading] = useState(false);
 
   // Sub Kegiatan State
@@ -73,23 +82,55 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
     });
   };
 
+  const toggleExpand = (kodeSkpd) => {
+    setExpanded((prev) => ({
+      ...prev,
+      [kodeSkpd]: !prev[kodeSkpd],
+    }));
+  };
+
+  const getUnitBadge = (sub) => {
+    if (sub.unit_type === 'rsud') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+          <Hospital className="w-3 h-3" />
+          <span>RSUD</span>
+        </span>
+      );
+    }
+    if (sub.unit_type === 'puskesmas') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <Stethoscope className="w-3 h-3" />
+          <span>PUSKESMAS</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+        <Building className="w-3 h-3" />
+        <span>KANTOR INDUK</span>
+      </span>
+    );
+  };
+
   // 1. Fetch SKPD List in Posting
   const fetchSkpdList = async () => {
     setSkpdLoading(true);
     try {
-      let url = `/api/posting/${session.id}/skpd-list?page=${skpdPage}&per_page=25`;
-      if (skpdSearch) url += `&search=${encodeURIComponent(skpdSearch)}`;
+      const url = `/api/posting/${session.id}/skpd-list?per_page=all`;
       const res = await fetch(url);
       const json = await res.json();
       if (json.status === 'success') {
-        setSkpdData(json.data.data || []);
-        setSkpdPagination({
-          current_page: json.data.current_page,
-          last_page: json.data.last_page,
-          total: json.data.total,
-          from: json.data.from,
-          to: json.data.to,
+        const list = Array.isArray(json.data) ? json.data : (json.data?.data || []);
+        setSkpdData(list);
+        const hier = json.hierarchy || [];
+        setSkpdHierarchy(hier);
+        const initialExpand = {};
+        hier.forEach((item) => {
+          if (item.has_children) initialExpand[item.kode_skpd] = true;
         });
+        setExpanded(initialExpand);
       }
     } catch (err) {
       console.error(err);
@@ -104,6 +145,9 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
     try {
       let url = `/api/posting/${session.id}/sub-kegiatan?page=${subPage}&per_page=15`;
       if (selectedSkpd) url += `&skpd=${encodeURIComponent(selectedSkpd.nama_skpd)}`;
+      if (selectedSkpd?.sub_skpd && selectedSkpd.sub_skpd !== 'all') {
+        url += `&sub_skpd=${encodeURIComponent(selectedSkpd.sub_skpd)}`;
+      }
       if (subSearch) url += `&search=${encodeURIComponent(subSearch)}`;
       const res = await fetch(url);
       const json = await res.json();
@@ -342,79 +386,266 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
       </div>
 
       {/* TAB 1: BELANJA & RKA */}
-      {activeTab === 'belanja' && (
-        <div className="space-y-4">
-          {/* Sub View 1: SKPD LIST */}
-          {belanjaView === 'skpd' && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 text-indigo-600" />
-                  <h2 className="text-sm font-bold text-slate-800">Rekap Perangkat Daerah (Arsip Posting)</h2>
-                </div>
+      {activeTab === 'belanja' && (() => {
+        const q = skpdSearch.trim().toLowerCase();
+        const filteredHierarchy = skpdHierarchy.filter((parent) => {
+          if (!q) return true;
+          const matchParent =
+            (parent.nama_skpd || '').toLowerCase().includes(q) ||
+            (parent.kode_skpd || '').toLowerCase().includes(q);
+          const matchChild = (parent.sub_units || []).some(
+            (sub) =>
+              (sub.nama_sub_skpd || '').toLowerCase().includes(q) ||
+              (sub.kode_sub_skpd || '').toLowerCase().includes(q)
+          );
+          return matchParent || matchChild;
+        });
+        const totalHierPages = Math.max(1, Math.ceil(filteredHierarchy.length / skpdPerPage));
+        const safeHierPage = Math.min(skpdPage, totalHierPages);
+        const paginatedHierarchy = filteredHierarchy.slice(
+          (safeHierPage - 1) * skpdPerPage,
+          safeHierPage * skpdPerPage
+        );
 
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+        return (
+        <div className="space-y-4">
+          {/* Sub View 1: SKPD LIST (Hierarki seperti Data Aktif) */}
+          {belanjaView === 'skpd' && (
+            <div className="space-y-3">
+              {/* Search & Pagination Controls */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Cari kode atau nama SKPD..."
                     value={skpdSearch}
                     onChange={(e) => {
                       setSkpdSearch(e.target.value);
                       setSkpdPage(1);
                     }}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:border-indigo-500"
+                    placeholder="Cari nama atau kode perangkat daerah..."
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                   />
+                  {skpdSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSkpdSearch('');
+                        setSkpdPage(1);
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2.5 self-end sm:self-auto">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="relative">
+                      <select
+                        value={skpdPerPage}
+                        onChange={(e) => {
+                          setSkpdPerPage(Number(e.target.value));
+                          setSkpdPage(1);
+                        }}
+                        className="appearance-none py-1.5 pl-2.5 pr-7 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer"
+                      >
+                        <option value="10">10 baris</option>
+                        <option value="15">15 baris</option>
+                        <option value="25">25 baris</option>
+                        <option value="50">50 baris</option>
+                        <option value="100">100 baris</option>
+                      </select>
+                      <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={fetchSkpdList}
+                    disabled={skpdLoading}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-600 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${skpdLoading ? 'animate-spin text-indigo-600' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
                 </div>
               </div>
 
-              {skpdLoading ? (
-                <div className="p-12 text-center">
-                  <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
-                  <p className="text-xs text-slate-500 font-medium">Memuat data SKPD...</p>
-                </div>
-              ) : skpdData.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 text-xs">
-                  Tidak ada data SKPD ditemukan dalam arsip posting ini.
-                </div>
-              ) : (
+              {/* Cascading Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                      <tr>
-                        <th className="px-4 py-3 w-12 text-center">No</th>
-                        <th className="px-4 py-3 w-44">Kode SKPD</th>
-                        <th className="px-4 py-3">Nama Perangkat Daerah</th>
-                        <th className="px-4 py-3 text-center w-28">Sub Giat</th>
-                        <th className="px-4 py-3 text-right w-44">Total Pagu Belanja</th>
-                        <th className="px-4 py-3 text-center w-36">Aksi</th>
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
+                        <th className="py-3 px-4 w-12 text-center"></th>
+                        <th className="py-3 px-4">Perangkat Daerah</th>
+                        <th className="py-3 px-4 text-center w-36">Total Sub Kegiatan</th>
+                        <th className="py-3 px-4 text-right w-52">Pagu Validasi</th>
+                        <th className="py-3 px-4 text-center w-40">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {skpdData.map((item, idx) => (
-                        <tr key={item.id_skpd} className="hover:bg-slate-50/70 transition">
-                          <td className="px-4 py-3 text-center text-slate-400">
-                            {(skpdPagination.from || 1) + idx}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-medium text-slate-700">{item.kode_skpd}</td>
-                          <td className="px-4 py-3 font-semibold text-slate-800">{item.nama_skpd}</td>
-                          <td className="px-4 py-3 text-center text-slate-600 font-medium">{item.total_sub_kegiatan}</td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-900">{formatRupiah(item.total_pagu)}</td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => handleSelectSkpd(item)}
-                              className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 mx-auto"
-                            >
-                              <span>Buka Rincian</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
+                      {skpdLoading ? (
+                        <tr>
+                          <td colSpan="5" className="py-16 text-center text-slate-400">
+                            <div className="flex flex-col items-center gap-2">
+                              <RefreshCw className="w-6 h-6 animate-spin text-indigo-600" />
+                              <span className="text-xs font-medium">Memuat struktur SKPD arsip...</span>
+                            </div>
                           </td>
                         </tr>
-                      ))}
+                      ) : filteredHierarchy.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="py-16 text-center text-slate-400">
+                            <Building2 className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold text-slate-600">Tidak ada perangkat daerah ditemukan</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedHierarchy.map((parent) => {
+                          const isExp = expanded[parent.kode_skpd] ?? false;
+                          return (
+                            <React.Fragment key={parent.kode_skpd}>
+                              <tr className="hover:bg-slate-50/80 transition group bg-white">
+                                <td className="py-3.5 px-4 text-center">
+                                  {parent.has_children ? (
+                                    <button
+                                      onClick={() => toggleExpand(parent.kode_skpd)}
+                                      className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 transition cursor-pointer"
+                                      title={isExp ? 'Tutup sub-unit' : 'Lihat sub-unit'}
+                                    >
+                                      {isExp ? (
+                                        <ChevronDown className="w-4 h-4 text-indigo-600" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[11px] text-slate-500 font-semibold">
+                                      {parent.kode_skpd}
+                                    </span>
+                                    {parent.has_children && (
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                        TOTAL GABUNGAN
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => handleSelectSkpd({ ...parent, sub_skpd: 'all' })}
+                                    className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition text-left mt-0.5 block cursor-pointer"
+                                  >
+                                    {parent.nama_skpd}
+                                  </button>
+                                </td>
+                                <td className="py-3.5 px-4 text-center font-bold text-slate-700 tabular-nums">
+                                  {parent.total_sub_keg}
+                                </td>
+                                <td className="py-3.5 px-4 text-right font-bold text-slate-800 font-mono tabular-nums">
+                                  {formatRupiah(parent.total_pagu)}
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <button
+                                    onClick={() => handleSelectSkpd({ ...parent, sub_skpd: 'all' })}
+                                    className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] transition inline-flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <FolderOpen className="w-3.5 h-3.5" />
+                                    <span>Lihat Sub Kegiatan</span>
+                                  </button>
+                                </td>
+                              </tr>
+
+                              {parent.has_children && isExp && (
+                                parent.sub_units.map((child, cIdx) => (
+                                  <tr
+                                    key={cIdx}
+                                    className="bg-slate-50/60 hover:bg-indigo-50/40 transition border-t border-slate-100"
+                                  >
+                                    <td className="py-2.5 px-4 text-center"></td>
+                                    <td className="py-2.5 px-4 pl-10">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-slate-400 font-mono text-[10px]">↳</span>
+                                        <span className="font-mono text-[11px] text-slate-500">
+                                          {child.kode_sub_skpd}
+                                        </span>
+                                        {getUnitBadge(child)}
+                                      </div>
+                                      <button
+                                        onClick={() => handleSelectSkpd({
+                                          ...parent,
+                                          nama_skpd: parent.nama_skpd,
+                                          kode_skpd: child.kode_sub_skpd,
+                                          sub_skpd: child.nama_sub_skpd,
+                                        })}
+                                        className="font-semibold text-slate-700 text-xs hover:text-indigo-600 transition text-left mt-0.5 block pl-3.5 cursor-pointer"
+                                      >
+                                        {child.nama_sub_skpd}
+                                      </button>
+                                    </td>
+                                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600 tabular-nums">
+                                      {child.count_sub}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono tabular-nums">
+                                      {formatRupiah(child.total_pagu)}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-center">
+                                      <button
+                                        onClick={() => handleSelectSkpd({
+                                          ...parent,
+                                          nama_skpd: parent.nama_skpd,
+                                          kode_skpd: child.kode_sub_skpd,
+                                          sub_skpd: child.nama_sub_skpd,
+                                        })}
+                                        className="px-2.5 py-1 rounded-lg bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 border border-slate-200 font-medium text-[11px] transition inline-flex items-center gap-1 cursor-pointer shadow-2xs"
+                                      >
+                                        <span>Buka</span>
+                                        <ArrowUpRight className="w-3 h-3" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
-              )}
+
+                {totalHierPages > 1 && (
+                  <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+                    <span>
+                      Menampilkan <strong>{(safeHierPage - 1) * skpdPerPage + 1}</strong>–<strong>{Math.min(safeHierPage * skpdPerPage, filteredHierarchy.length)}</strong> dari <strong>{filteredHierarchy.length}</strong> SKPD
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        disabled={safeHierPage <= 1}
+                        onClick={() => setSkpdPage((p) => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="px-2.5 font-semibold tabular-nums">
+                        {safeHierPage} / {totalHierPages}
+                      </span>
+                      <button
+                        disabled={safeHierPage >= totalHierPages}
+                        onClick={() => setSkpdPage((p) => Math.min(totalHierPages, p + 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -432,7 +663,11 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
                   </button>
                   <div className="h-5 w-px bg-slate-200"></div>
                   <div>
-                    <h2 className="text-sm font-bold text-slate-900">{selectedSkpd.nama_skpd}</h2>
+                    <h2 className="text-sm font-bold text-slate-900">
+                      {selectedSkpd.sub_skpd && selectedSkpd.sub_skpd !== 'all'
+                        ? selectedSkpd.sub_skpd
+                        : selectedSkpd.nama_skpd}
+                    </h2>
                     <p className="text-[11px] text-slate-400 font-mono">{selectedSkpd.kode_skpd}</p>
                   </div>
                 </div>
@@ -538,7 +773,8 @@ export default function PostingExplorer({ session, onBack, onUnposting }) {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* TAB 2: PENDAPATAN DAERAH */}
       {activeTab === 'pendapatan' && (
