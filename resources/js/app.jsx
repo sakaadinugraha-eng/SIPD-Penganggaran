@@ -46,6 +46,7 @@ import MasterSumberDana from './pages/MasterSumberDana';
 import Pendapatan from './pages/Pendapatan';
 import Pembiayaan from './pages/Pembiayaan';
 import PostingData from './pages/PostingData';
+import ImportDatabase from './pages/ImportDatabase';
 import { Toaster, toast } from 'react-hot-toast';
 
 function App() {
@@ -281,6 +282,10 @@ function App() {
                   skpdList={skpdList}
                   onDataReset={fetchGlobalData}
                 />
+              )}
+
+              {activeTab === 'import-db' && (
+                <ImportDatabase onDataImported={fetchGlobalData} />
               )}
             </>
           )}

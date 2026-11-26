@@ -34,6 +34,8 @@ Route::prefix('api')->group(function () {
     Route::post('/data/reset-all', [DataManagementController::class, 'resetAll']);
     Route::post('/data/reset-module', [DataManagementController::class, 'resetModule']);
     Route::post('/data/reset-skpd', [DataManagementController::class, 'resetSkpd']);
+    Route::get('/data/sql-files', [DataManagementController::class, 'listSqlFiles']);
+    Route::post('/data/import-sql', [DataManagementController::class, 'importSql']);
 
     // Posting & Unposting Data API
     Route::get('/posting', [PostingController::class, 'index']);

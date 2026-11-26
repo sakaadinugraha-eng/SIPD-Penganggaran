@@ -18,13 +18,14 @@ import {
   ShoppingBag,
   Scale,
   Landmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Upload
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, user, onLogout, collapsed, setCollapsed }) {
   const [penganggaranOpen, setPenganggaranOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(
-    activeTab === 'users' || activeTab === 'kosongkan'
+    activeTab === 'users' || activeTab === 'kosongkan' || activeTab === 'import-db'
   );
 
   const mainMenuItems = [
@@ -44,16 +45,17 @@ export default function Sidebar({ activeTab, setActiveTab, user, onLogout, colla
   ];
 
   const settingsSubItems = [
+    { id: 'import-db', label: 'Import Database', icon: Upload },
     { id: 'users', label: 'Atur Users', icon: Users },
     { id: 'kosongkan', label: 'Pembersihan Data', icon: Trash2, danger: true },
   ];
 
   const isPenganggaranActive = activeTab === 'skpd' || activeTab === 'subkegiatan' || activeTab === 'pendapatan' || activeTab === 'pembiayaan' || activeTab === 'posting';
-  const isSettingsActive = activeTab === 'users' || activeTab === 'kosongkan';
+  const isSettingsActive = activeTab === 'users' || activeTab === 'kosongkan' || activeTab === 'import-db';
 
   const handleSelectTab = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'users' || tabId === 'kosongkan') {
+    if (tabId === 'users' || tabId === 'kosongkan' || tabId === 'import-db') {
       setSettingsOpen(true);
     }
     if (tabId === 'skpd' || tabId === 'subkegiatan' || tabId === 'pendapatan' || tabId === 'pembiayaan' || tabId === 'posting') {

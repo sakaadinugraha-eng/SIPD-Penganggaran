@@ -14,6 +14,7 @@ use App\Models\Pendapatan;
 use App\Models\PendapatanSkpd;
 use App\Models\Pembiayaan;
 use App\Models\PembiayaanSkpd;
+use App\Services\SqlImportService;
 
 class DataManagementController extends Controller
 {
@@ -844,5 +845,116 @@ class DataManagementController extends Controller
                 'total_nilai' => $totalNilaiFiltered,
             ]
         ]);
+    }
+
+    /**
+     * Daftar file .sql yang tersedia di storage/app beserta info batas upload PHP
+     */
+    public function listSqlFiles()
+    {
+        $dir = storage_path('app');
+        $files = [];
+
+        if (is_dir($dir)) {
+            foreach (glob($dir . DIRECTORY_SEPARATOR . '*.sql') ?: [] as $path) {
+                if (is_file($path)) {
+                    $sizeBytes = filesize($path) ?: 0;
+                    $files[] = [
+                        'name' => basename($path),
+                        'size_bytes' => $sizeBytes,
+                        'size_mb' => round($sizeBytes / 1048576, 2),
+                        'modified_at' => date('Y-m-d H:i:s', filemtime($path) ?: time()),
+                    ];
+                }
+            }
+        }
+
+        usort($files, fn ($a, $b) => strcmp($b['modified_at'], $a['modified_at']));
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $files,
+            'limits' => [
+                'upload_max_filesize' => ini_get('upload_max_filesize'),
+                'post_max_size' => ini_get('post_max_size'),
+            ],
+        ]);
+    }
+
+    /**
+     * Import 4 tabel utama Belanja & RKA dari file .sql (mode menimpa)
+     */
+    public function importSql(Request $request, SqlImportService $importer)
+    {
+        $request->validate([
+            'sql_file' => 'nullable|file|max:204800',
+            'server_file' => 'nullable|string|max:255',
+        ]);
+
+        $tempPath = null;
+
+        try {
+            if ($request->hasFile('sql_file')) {
+                $uploaded = $request->file('sql_file');
+                $ext = strtolower($uploaded->getClientOriginalExtension());
+                if ($ext !== 'sql') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Hanya file berekstensi .sql yang diperbolehkan.',
+                    ], 422);
+                }
+                $targetPath = $uploaded->getRealPath();
+            } elseif ($request->filled('server_file')) {
+                $safeName = basename((string) $request->input('server_file'));
+                if (!str_ends_with(strtolower($safeName), '.sql')) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Nama file server harus berekstensi .sql.',
+                    ], 422);
+                }
+                $targetPath = storage_path('app' . DIRECTORY_SEPARATOR . $safeName);
+                if (!is_file($targetPath)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "File {$safeName} tidak ditemukan di storage/app.",
+                    ], 404);
+                }
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pilih file .sql untuk diunggah atau pilih file yang ada di server.',
+                ], 422);
+            }
+
+            $result = $importer->importFromFile($targetPath, true);
+            $totalRows = array_sum($result['counts']);
+
+            if ($totalRows === 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tidak ada data INSERT untuk 4 tabel utama (data_sub_keg_bl, data_rka, data_capaian_prog_sub_keg, data_sub_keg_indikator) di dalam file .sql tersebut.',
+                    'data' => $result,
+                ], 422);
+            }
+
+            $syncNote = ($result['pagu_synced_rows'] ?? 0) > 0
+                ? ' Pagu pada ' . number_format($result['pagu_synced_rows'], 0, ',', '.') . ' sub kegiatan disinkronkan dari rincian RKA.'
+                : '';
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Import berhasil! Sebanyak " . number_format($totalRows, 0, ',', '.') . " baris data dimasukkan ke 4 tabel utama dalam " . round($result['duration_ms'] / 1000, 2) . " detik." . $syncNote,
+                'data' => array_merge($result, ['total_rows' => $totalRows]),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengimpor file SQL: ' . $e->getMessage(),
+            ], 500);
+        } finally {
+            if ($tempPath && is_file($tempPath)) {
+                @unlink($tempPath);
+            }
+        }
     }
 }

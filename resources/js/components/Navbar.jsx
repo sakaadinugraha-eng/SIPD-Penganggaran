@@ -13,6 +13,7 @@ export default function Navbar({ activeTab, onRefresh, refreshing, collapsed, se
     'sumber-dana': 'Master Sumber Pendanaan APBD',
     users: 'Pengaturan: Manajemen Pengguna & Hak Akses',
     kosongkan: 'Pengaturan: Manajemen & Pembersihan Data',
+    'import-db': 'Pengaturan: Import Database (.sql)',
     'rka-print': 'Dokumen Formulir Cetak RKA (A4 Landscape)',
   };
 
