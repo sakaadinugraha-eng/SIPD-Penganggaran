@@ -286,16 +286,23 @@ class LaporanController extends Controller
         $cacheKey = 'laporan_perbup_tree_v11:' . md5("{$ver}|{$tahun}|{$sourceA}|{$sourceB}|{$kodeSkpd}|{$namaSkpd}|{$sumberDana}");
         $ttl = ($ver === 'static') ? now()->addHours(12) : now()->addMinutes(30);
 
-        $tree = $this->rememberReportCache($cacheKey, $ttl, function () use ($sourceA, $sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana) {
-            $dataA = $this->fetchHierarchicalRows($sourceA, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
-            $dataB = $this->fetchHierarchicalRows($sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
-            return $this->buildComparisonTree($dataA, $dataB);
-        });
+        try {
+            $tree = $this->rememberReportCache($cacheKey, $ttl, function () use ($sourceA, $sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana) {
+                $dataA = $this->fetchHierarchicalRows($sourceA, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
+                $dataB = $this->fetchHierarchicalRows($sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
+                return $this->buildComparisonTree($dataA, $dataB);
+            });
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $tree,
-        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+            return response()->json([
+                'status' => 'success',
+                'data' => $tree,
+            ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')',
+            ], 500, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        }
     }
 
     protected function fetchSkpdSummaryForSource(string $source, int $tahun, string $sumberDana): array
