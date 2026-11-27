@@ -613,12 +613,31 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
     }
   }, [optionsLoading, sources.length, sourceA, sourceB, selectedSkpd, selectedDana, fetchReportData]);
 
-  // Muat tree per-SKPD secara bertahap (concurrency 4) agar tidak membebani memori/timeout server
+  // Muat tree per-SKPD secara bertahap (concurrency 2 + auto-retry) agar tidak membebani server
   const loadSkpdTreesBatch = useCallback(async (targetSkpds, autoExpandDepth = null) => {
     if (!Array.isArray(targetSkpds) || targetSkpds.length === 0) return;
     setTreeLoading(true);
-    const concurrency = 4;
+    const concurrency = 2;
     let index = 0;
+
+    const fetchWithRetry = async (url, retries = 2) => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          const json = await res.json();
+          if (json.status === 'success') {
+            return json;
+          }
+          throw new Error(json.message || 'API error');
+        } catch (err) {
+          if (attempt === retries) throw err;
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+        }
+      }
+    };
 
     const worker = async () => {
       while (index < targetSkpds.length) {
@@ -633,9 +652,8 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             nama_skpd: current.nama_skpd || '',
             sumber_dana: selectedDana,
           });
-          const res = await fetch(`/api/laporan/perbup/tree?${params.toString()}`);
-          const json = await res.json();
-          if (json.status === 'success') {
+          const json = await fetchWithRetry(`/api/laporan/perbup/tree?${params.toString()}`);
+          if (json && json.status === 'success') {
             const skpdNodes = json.data || [];
             const childrenOfSkpd = skpdNodes[0]?.children || [];
             setSkpdTreesCache((prev) => ({ ...prev, [cacheKey]: childrenOfSkpd }));
@@ -652,7 +670,7 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             }
           }
         } catch {
-          // Lanjutkan ke SKPD berikutnya jika satu SKPD gagal
+          // Lanjutkan ke SKPD berikutnya jika tetap gagal setelah retry
         }
       }
     };
