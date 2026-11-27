@@ -307,6 +307,18 @@ class SipdSyncController extends Controller
                 ? ($r['subs_bl_teks']['subs_asli'] ?? '') 
                 : ($r['subs_bl_teks'] ?? ($r['nama_subs_sub_bl'] ?? ''));
 
+            $penerimaNama = trim((string) ($r['penerima'] ?? ($r['penerima_bantuan'] ?? ($r['lokus_akun_teks'] ?? ''))));
+            $namaStandar = trim((string) ($r['nama_standar_harga'] ?? ''));
+            $namaAkun = trim((string) ($r['nama_akun'] ?? ''));
+            $namaKomponen = trim((string) ($r['nama_komponen'] ?? ''));
+            if ($penerimaNama !== '' && ($namaKomponen === '' || $namaKomponen === $namaAkun) && ($namaStandar === '' || $namaStandar === $namaAkun)) {
+                $jenisBl = trim((string) ($r['jenis_bl'] ?? ''));
+                $namaKomponen = $jenisBl !== '' ? "{$penerimaNama} [{$jenisBl}]" : $penerimaNama;
+            }
+            if ($namaKomponen === '') {
+                $namaKomponen = $namaStandar !== '' ? $namaStandar : $namaAkun;
+            }
+
             Rka::updateOrCreate(
                 [
                     'id_rinci_sub_bl' => $idRinci,
@@ -325,7 +337,7 @@ class SipdSyncController extends Controller
                     'nama_akun' => $r['nama_akun'] ?? null,
                     'kode_standar_harga' => $r['kode_standar_harga'] ?? null,
                     'nama_standar_harga' => $r['nama_standar_harga'] ?? null,
-                    'nama_komponen' => $r['nama_komponen'] ?? ($r['nama_standar_harga'] ?? ''),
+                    'nama_komponen' => $namaKomponen,
                     'spek_komponen' => $r['spek_komponen'] ?? ($r['spek'] ?? ''),
                     'koefisien' => $r['koefisien'] ?? null,
                     'volume' => $r['volume'] ?? ($r['volum1'] ?? ''),
