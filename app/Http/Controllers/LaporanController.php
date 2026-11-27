@@ -23,7 +23,7 @@ class LaporanController extends Controller
         $ver = SystemLogService::getCacheVersion();
         $cacheKey = "laporan_perbup_options:v{$ver}:{$tahun}";
 
-        $payload = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($tahun) {
+        $payload = $this->rememberReportCache($cacheKey, now()->addMinutes(30), function () use ($tahun) {
             return $this->buildPerbupOptionsPayload($tahun);
         });
 
@@ -209,7 +209,7 @@ class LaporanController extends Controller
         $cacheKey = 'laporan_perbup_summary:' . md5("{$ver}|{$tahun}|{$sourceA}|{$sourceB}|{$sumberDana}");
         $ttl = ($ver === 'static') ? now()->addHours(12) : now()->addMinutes(30);
 
-        $payload = Cache::remember($cacheKey, $ttl, function () use ($tahun, $sourceA, $sourceB, $sumberDana) {
+        $payload = $this->rememberReportCache($cacheKey, $ttl, function () use ($tahun, $sourceA, $sourceB, $sumberDana) {
             $rowsA = $this->fetchSkpdSummaryForSource($sourceA, $tahun, $sumberDana);
             $rowsB = $this->fetchSkpdSummaryForSource($sourceB, $tahun, $sumberDana);
 
@@ -286,7 +286,7 @@ class LaporanController extends Controller
         $cacheKey = 'laporan_perbup_tree_v11:' . md5("{$ver}|{$tahun}|{$sourceA}|{$sourceB}|{$kodeSkpd}|{$namaSkpd}|{$sumberDana}");
         $ttl = ($ver === 'static') ? now()->addHours(12) : now()->addMinutes(30);
 
-        $tree = Cache::remember($cacheKey, $ttl, function () use ($sourceA, $sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana) {
+        $tree = $this->rememberReportCache($cacheKey, $ttl, function () use ($sourceA, $sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana) {
             $dataA = $this->fetchHierarchicalRows($sourceA, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
             $dataB = $this->fetchHierarchicalRows($sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana);
             return $this->buildComparisonTree($dataA, $dataB);
@@ -904,6 +904,19 @@ class LaporanController extends Controller
     protected function isRsudName(string $name): bool
     {
         return stripos($name, 'rsud') !== false || stripos($name, 'rumah sakit') !== false;
+    }
+
+    /**
+     * Gunakan file cache agar payload SKPD besar tidak terbentur max_allowed_packet MySQL,
+     * dan tetap fallback ke eksekusi langsung jika cache gagal ditulis.
+     */
+    protected function rememberReportCache(string $key, \DateTimeInterface $ttl, \Closure $callback)
+    {
+        try {
+            return Cache::store('file')->remember($key, $ttl, $callback);
+        } catch (\Throwable $e) {
+            return $callback();
+        }
     }
 
     /**
