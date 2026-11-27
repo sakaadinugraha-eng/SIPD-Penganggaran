@@ -878,6 +878,7 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             : '#ffffff';
         const fw = ['skpd', 'program', 'kegiatan', 'belanja'].includes(r.rawLevel) ? 'bold' : 'normal';
         const padLeft = Math.max(0, r.depth - 1) * 14;
+        const cleanNum = (v) => (Math.abs(Number(v || 0)) < 0.5 ? 0 : Math.round(Number(v || 0)));
         return `<tr style="background:${bg};font-weight:${fw};">
           <td class="txt">${escapeHtml(r.level)}</td>
           <td class="txt">${escapeHtml(r.kode)}</td>
@@ -886,10 +887,9 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
           <td class="txt">${escapeHtml(r.koefisien)}</td>
           <td class="txt">${escapeHtml(r.satuan)}</td>
           <td class="txt">${escapeHtml(r.sumber_dana)}</td>
-          <td class="num">${Number(r.total_a || 0)}</td>
-          <td class="num">${Number(r.total_b || 0)}</td>
-          <td class="num">${Number(r.selisih || 0)}</td>
-          <td style="text-align:right;">${Number(r.persen ?? 0)}%</td>
+          <td class="num">${cleanNum(r.total_a)}</td>
+          <td class="num">${cleanNum(r.total_b)}</td>
+          <td class="num">${cleanNum(r.selisih)}</td>
           <td class="txt" style="text-align:center;">${escapeHtml(r.status)}</td>
         </tr>`;
       })
@@ -902,7 +902,7 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
         <style>
           table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 10pt; }
           th, td { border: 1px solid #cbd5e1; padding: 5px 6px; vertical-align: top; }
-          th { background: #312e81; color: #ffffff; font-weight: bold; text-align: left; }
+          th { background: #312e81; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; }
           .txt { text-align: left; mso-number-format:"\\@"; white-space: normal; }
           .num { text-align: right; mso-number-format:"\\#\\,\\#\\#0"; white-space: nowrap; }
         </style>
@@ -922,7 +922,6 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             <col width="130" />
             <col width="130" />
             <col width="130" />
-            <col width="90" />
             <col width="120" />
           </colgroup>
           <thead>
@@ -934,11 +933,10 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
               <th>Koefisien</th>
               <th>Satuan</th>
               <th>Sumber Dana</th>
-              <th style="text-align:right;">Sebelum (${escapeHtml(labelA)})</th>
-              <th style="text-align:right;">Sesudah (${escapeHtml(labelB)})</th>
-              <th style="text-align:right;">Selisih (Rp)</th>
-              <th style="text-align:right;">Perubahan (%)</th>
-              <th style="text-align:center;">Status</th>
+              <th>Sebelum (${escapeHtml(labelA)})</th>
+              <th>Sesudah (${escapeHtml(labelB)})</th>
+              <th>(+/-)</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
@@ -975,8 +973,7 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
       'Sumber Dana',
       `Sebelum (${labelA})`,
       `Sesudah (${labelB})`,
-      'Selisih (Rp)',
-      'Perubahan (%)',
+      '(+/-)',
       'Status',
     ];
 
@@ -1000,8 +997,7 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
         r.sumber_dana,
         r.total_a,
         r.total_b,
-        r.selisih,
-        r.persen,
+        Math.abs(Number(r.selisih || 0)) < 0.5 ? 0 : r.selisih,
         r.status,
       ].map(escapeCsv).join(',')),
     ];
@@ -1023,8 +1019,10 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
-    const fmtRp = (v) =>
-      new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(v || 0));
+    const fmtRp = (v) => {
+      const n = Math.abs(Number(v || 0)) < 0.5 ? 0 : Number(v || 0);
+      return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+    };
 
     const tableRows = rows
       .map((r) => {
@@ -1047,7 +1045,6 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
           <td style="text-align:right;white-space:nowrap;">${fmtRp(r.total_a)}</td>
           <td style="text-align:right;white-space:nowrap;">${fmtRp(r.total_b)}</td>
           <td style="text-align:right;white-space:nowrap;">${fmtRp(r.selisih)}</td>
-          <td style="text-align:right;white-space:nowrap;">${Number(r.persen ?? 0)}%</td>
           <td style="text-align:center;">${escapeHtml(r.status)}</td>
         </tr>`;
       })
@@ -1085,8 +1082,9 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
           h2 { margin: 0 0 3px 0; font-size: 12pt; }
           p { margin: 0 0 8px 0; font-size: 8.5pt; color: #334155; }
           table { width: 100%; border-collapse: collapse; font-size: 7.5pt; table-layout: fixed; }
+          thead { display: table-header-group; }
           th, td { border: 1px solid #94a3b8; padding: 3px 4px; vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
-          th { background: #312e81; color: #ffffff; font-weight: bold; }
+          th { background: #312e81; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; }
           tr { page-break-inside: avoid; }
         </style>
       </head>
@@ -1105,9 +1103,8 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             <col style="width:12%;" />
             <col style="width:9%;" />
             <col style="width:9%;" />
-            <col style="width:8%;" />
-            <col style="width:3%;" />
-            <col style="width:5%;" />
+            <col style="width:9%;" />
+            <col style="width:7%;" />
           </colgroup>
           <thead>
             <tr>
@@ -1118,11 +1115,10 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
               <th>Koefisien</th>
               <th>Satuan</th>
               <th>Sumber Dana</th>
-              <th style="text-align:right;">Sebelum</th>
-              <th style="text-align:right;">Sesudah</th>
-              <th style="text-align:right;">Selisih (Rp)</th>
-              <th style="text-align:right;">%</th>
-              <th style="text-align:center;">Status</th>
+              <th>Sebelum</th>
+              <th>Sesudah</th>
+              <th>(+/-)</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>

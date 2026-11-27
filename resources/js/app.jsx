@@ -393,5 +393,8 @@ function App() {
 
 const rootEl = document.getElementById('root');
 if (rootEl) {
-  createRoot(rootEl).render(<App />);
+  if (!rootEl._reactRoot) {
+    rootEl._reactRoot = createRoot(rootEl);
+  }
+  rootEl._reactRoot.render(<App />);
 }

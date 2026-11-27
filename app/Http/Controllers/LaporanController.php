@@ -283,7 +283,7 @@ class LaporanController extends Controller
         $sumberDana = trim((string) $request->query('sumber_dana', 'all'));
 
         $ver = ($sourceA === 'live' || $sourceB === 'live') ? SystemLogService::getCacheVersion() : 'static';
-        $cacheKey = 'laporan_perbup_tree_v10:' . md5("{$ver}|{$tahun}|{$sourceA}|{$sourceB}|{$kodeSkpd}|{$namaSkpd}|{$sumberDana}");
+        $cacheKey = 'laporan_perbup_tree_v11:' . md5("{$ver}|{$tahun}|{$sourceA}|{$sourceB}|{$kodeSkpd}|{$namaSkpd}|{$sumberDana}");
         $ttl = ($ver === 'static') ? now()->addHours(12) : now()->addMinutes(30);
 
         $tree = Cache::remember($cacheKey, $ttl, function () use ($sourceA, $sourceB, $tahun, $kodeSkpd, $namaSkpd, $sumberDana) {
@@ -451,6 +451,8 @@ class LaporanController extends Controller
                 $chunkRows = (clone $rkaQuery)
                     ->whereIn('kode_sbl', $chunk)
                     ->orderByDesc('total_harga')
+                    ->orderBy('koefisien')
+                    ->orderBy('satuan')
                     ->orderBy('id')
                     ->get([
                         'id_rinci_sub_bl', 'id_unik', 'kode_sbl',
