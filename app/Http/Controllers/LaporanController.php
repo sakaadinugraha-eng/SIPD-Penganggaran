@@ -30,7 +30,7 @@ class LaporanController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $payload,
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     protected function buildPerbupOptionsPayload(int $tahun): array
@@ -266,7 +266,7 @@ class LaporanController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $payload,
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     /**
@@ -295,7 +295,7 @@ class LaporanController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $tree,
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     protected function fetchSkpdSummaryForSource(string $source, int $tahun, string $sumberDana): array
