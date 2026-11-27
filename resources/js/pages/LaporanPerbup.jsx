@@ -196,30 +196,71 @@ function collectExpandablePaths(nodes, maxDepth, currentDepth = 1, parentPath = 
   return out;
 }
 
+const EXPORT_LEVEL_LABELS = {
+  skpd: 'SKPD',
+  program: 'PROGRAM',
+  kegiatan: 'KEGIATAN',
+  sub_kegiatan: 'SUB KEGIATAN',
+  belanja: 'BELANJA',
+  paket: 'PAKET',
+  keterangan_group: 'KETERANGAN',
+  keterangan: 'RINCIAN',
+};
+
+const EXPORT_STATUS_LABELS = {
+  baru: 'Baru',
+  dihapus: 'Dihapus',
+  bertambah: 'Bertambah',
+  berkurang: 'Berkurang',
+  berubah_rincian: 'Rincian Berubah',
+  tetap: 'Tetap',
+};
+
 function flattenForExport(nodes, maxDepth = 8, depth = 1, rows = []) {
   if (!Array.isArray(nodes) || depth > maxDepth) return rows;
   for (const n of nodes) {
     const isLeaf = n.level === 'keterangan';
+    const koefA = String(n.koefisien_a || '').trim().replace(/\s+/g, ' ');
+    const koefB = String(n.koefisien_b || '').trim().replace(/\s+/g, ' ');
     const koef = isLeaf
-      ? (n.koefisien_a && n.koefisien_b && n.koefisien_a !== n.koefisien_b
-          ? `${n.koefisien_a} -> ${n.koefisien_b}`
-          : (n.koefisien_b || n.koefisien_a || '-'))
+      ? (koefA && koefB && koefA !== '-' && koefB !== '-' && koefA.toLowerCase() !== koefB.toLowerCase()
+          ? `${koefA} -> ${koefB}`
+          : (koefB && koefB !== '-' ? koefB : (koefA || '-')))
       : '';
-    const satuan = isLeaf ? (n.satuan_b || n.satuan_a || '-') : '';
+
+    const satA = String(n.satuan_a || '').trim();
+    const satB = String(n.satuan_b || '').trim();
+    const satALow = satA.toLowerCase();
+    const satBLow = satB.toLowerCase();
+    const isCombinedSat = satALow && satBLow && (satALow.startsWith(satBLow + ' x ') || satBLow.startsWith(satALow + ' x '));
+    const satuan = isLeaf
+      ? (satA && satB && satA !== '-' && satB !== '-' && satALow !== satBLow && !isCombinedSat
+          ? `${satA} -> ${satB}`
+          : (satB && satB !== '-' ? satB : (satA || '-')))
+      : '';
+
+    const danaChanged =
+      isLeaf &&
+      n.sumber_dana_a &&
+      n.sumber_dana_b &&
+      normalizeDanaName(n.sumber_dana_a) !== normalizeDanaName(n.sumber_dana_b);
     const dana = isLeaf
-      ? (n.sumber_dana_b || n.sumber_dana_a || '')
+      ? (danaChanged ? `${n.sumber_dana_a} -> ${n.sumber_dana_b}` : (n.sumber_dana_b || n.sumber_dana_a || ''))
       : (n.sumber_dana || '');
 
     const cleanNama = n.level === 'paket'
-      ? String(n.nama || '').replace(/^\[\s*#\s*\]\s*/i, '')
+      ? String(n.nama || '').replace(/^\[\s*#\s*\]\s*/i, '').trim()
       : n.level === 'keterangan_group'
-      ? String(n.nama || '').replace(/^\[\s*-\s*\]\s*/i, '')
-      : (n.nama || '');
+      ? String(n.nama || '').replace(/^\[\s*-\s*\]\s*/i, '').trim()
+      : String(n.nama || '').trim();
+
+    const cleanKode = n.kode === '#' || n.kode === '-' ? '' : (n.kode || '');
 
     rows.push({
-      level: n.level,
+      level: EXPORT_LEVEL_LABELS[n.level] || String(n.level || '').toUpperCase(),
+      rawLevel: n.level,
       depth,
-      kode: n.kode || '',
+      kode: cleanKode,
       uraian: cleanNama,
       spesifikasi: n.spesifikasi || '',
       koefisien: koef,
@@ -229,7 +270,7 @@ function flattenForExport(nodes, maxDepth = 8, depth = 1, rows = []) {
       total_b: n.total_b || 0,
       selisih: n.selisih || 0,
       persen: n.persen ?? 0,
-      status: n.status || 'tetap',
+      status: EXPORT_STATUS_LABELS[n.status] || 'Tetap',
     });
 
     if (depth < maxDepth && Array.isArray(n.children) && n.children.length > 0) {
@@ -669,39 +710,62 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
     const tableRows = rows
       .map((r) => {
         const bg =
-          r.level === 'skpd'
+          r.rawLevel === 'skpd'
             ? '#eef2ff'
-            : r.level === 'program'
+            : r.rawLevel === 'program'
             ? '#f8fafc'
             : '#ffffff';
-        const fw = ['skpd', 'program', 'kegiatan', 'belanja'].includes(r.level) ? 'bold' : 'normal';
-        const indent = '&nbsp;&nbsp;&nbsp;'.repeat(Math.max(0, r.depth - 1));
+        const fw = ['skpd', 'program', 'kegiatan', 'belanja'].includes(r.rawLevel) ? 'bold' : 'normal';
+        const padLeft = Math.max(0, r.depth - 1) * 14;
         return `<tr style="background:${bg};font-weight:${fw};">
-          <td>${escapeHtml(r.level.toUpperCase())}</td>
-          <td>${escapeHtml(r.kode)}</td>
-          <td>${indent}${escapeHtml(r.uraian)}</td>
-          <td>${escapeHtml(r.spesifikasi)}</td>
-          <td>${escapeHtml(r.koefisien)}</td>
-          <td>${escapeHtml(r.satuan)}</td>
-          <td>${escapeHtml(r.sumber_dana)}</td>
-          <td style="text-align:right;">${Number(r.total_a || 0)}</td>
-          <td style="text-align:right;">${Number(r.total_b || 0)}</td>
-          <td style="text-align:right;">${Number(r.selisih || 0)}</td>
+          <td class="txt">${escapeHtml(r.level)}</td>
+          <td class="txt">${escapeHtml(r.kode)}</td>
+          <td class="txt" style="padding-left:${padLeft + 6}px;">${escapeHtml(r.uraian)}</td>
+          <td class="txt">${escapeHtml(r.spesifikasi)}</td>
+          <td class="txt">${escapeHtml(r.koefisien)}</td>
+          <td class="txt">${escapeHtml(r.satuan)}</td>
+          <td class="txt">${escapeHtml(r.sumber_dana)}</td>
+          <td class="num">${Number(r.total_a || 0)}</td>
+          <td class="num">${Number(r.total_b || 0)}</td>
+          <td class="num">${Number(r.selisih || 0)}</td>
           <td style="text-align:right;">${Number(r.persen ?? 0)}%</td>
-          <td>${escapeHtml(r.status)}</td>
+          <td class="txt" style="text-align:center;">${escapeHtml(r.status)}</td>
         </tr>`;
       })
       .join('');
 
     const html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head><meta charset="utf-8" /></head>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 10pt; }
+          th, td { border: 1px solid #cbd5e1; padding: 5px 6px; vertical-align: top; }
+          th { background: #312e81; color: #ffffff; font-weight: bold; text-align: left; }
+          .txt { text-align: left; mso-number-format:"\\@"; white-space: normal; }
+          .num { text-align: right; mso-number-format:"\\#\\,\\#\\#0"; white-space: nowrap; }
+        </style>
+      </head>
       <body>
-        <h3>Laporan Kelengkapan Perubahan Perbup - TA ${escapeHtml(tahunAnggaran)}</h3>
-        <p>Perbandingan: <b>${escapeHtml(labelA)}</b> vs <b>${escapeHtml(labelB)}</b> | Kedalaman: <b>${escapeHtml(activeLvlLabel)}</b></p>
-        <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;">
+        <h3 style="font-family:Calibri,Arial,sans-serif;">Laporan Kelengkapan Perubahan Perbup - TA ${escapeHtml(tahunAnggaran)}</h3>
+        <p style="font-family:Calibri,Arial,sans-serif;font-size:10pt;">Perbandingan: <b>${escapeHtml(labelA)}</b> vs <b>${escapeHtml(labelB)}</b> | Kedalaman: <b>${escapeHtml(activeLvlLabel)}</b></p>
+        <table>
+          <colgroup>
+            <col width="110" />
+            <col width="145" />
+            <col width="340" />
+            <col width="260" />
+            <col width="140" />
+            <col width="90" />
+            <col width="220" />
+            <col width="130" />
+            <col width="130" />
+            <col width="130" />
+            <col width="90" />
+            <col width="120" />
+          </colgroup>
           <thead>
-            <tr style="background:#312e81;color:#ffffff;font-weight:bold;">
+            <tr>
               <th>Level</th>
               <th>Kode</th>
               <th>Uraian / Komponen</th>
@@ -709,11 +773,11 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
               <th>Koefisien</th>
               <th>Satuan</th>
               <th>Sumber Dana</th>
-              <th>Sebelum (${escapeHtml(labelA)})</th>
-              <th>Sesudah (${escapeHtml(labelB)})</th>
-              <th>Selisih (Rp)</th>
-              <th>Perubahan (%)</th>
-              <th>Status</th>
+              <th style="text-align:right;">Sebelum (${escapeHtml(labelA)})</th>
+              <th style="text-align:right;">Sesudah (${escapeHtml(labelB)})</th>
+              <th style="text-align:right;">Selisih (Rp)</th>
+              <th style="text-align:right;">Perubahan (%)</th>
+              <th style="text-align:center;">Status</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
