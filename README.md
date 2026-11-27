@@ -1,60 +1,67 @@
-# SIPD-Penganggaran 🏛️📊
+# SADA SIPD (SIPD-Penganggaran)
 
-> **Sistem Informasi Manajemen, Analisis, dan Arsip Snapshot Data Penganggaran APBD (SIPD RI)**
+> **Sinkronisasi Anggaran dan Data — Sistem Informasi Manajemen, Analisis, Laporan, dan Arsip Snapshot Data Penganggaran APBD (SIPD RI)**
 
-Aplikasi berbasis web untuk mengelola, menganalisis, dan membekukan (*snapshot posting*) data penganggaran daerah (APBD) dari SIPD RI Kemendagri. Dilengkapi dengan pengelolaan Belanja SKPD, Rincian Komponen RKA, Pendapatan, Pembiayaan, serta fitur Cetak RKA standar A4 Landscape.
+Aplikasi web berbasis Laravel dan React untuk menyinkronkan, mengelola, menganalisis, membandingkan, dan mengarsipkan (*snapshot posting*) data penganggaran daerah (APBD) dari SIPD RI Kemendagri secara lokal.
 
 ---
 
-## 🚀 Fitur Unggulan
+## Fitur Utama
 
-### 1. Dashboard Ringkasan APBD Real-Time
-- Visualisasi metrik keuangan utama: **Total Belanja**, **Total Pendapatan**, **Pembiayaan Netto** (Penerimaan vs Pengeluaran), dan status **Surplus / (Defisit)**.
-- Filter dinamis berdasarkan Tahun Anggaran (misal: TA 2027) dan SKPD.
+### 1. Dashboard & Monitoring Sistem
+- Ringkasan metrik keuangan APBD berdasarkan Tahun Anggaran: **Total Belanja**, **Total Pendapatan**, **Pembiayaan Netto** (Penerimaan vs Pengeluaran), dan status **Surplus / (Defisit)**.
+- Visualisasi grafik anggaran (`DashboardCharts`) dan panel pemantauan sistem (`SystemMonitoringPanel`) untuk status koneksi database, riwayat sinkronisasi (`SyncLog`), log aktivitas (`ActivityLog`), serta notifikasi status data.
 
-### 2. Modul Belanja & Rincian RKA SKPD
-- Navigasi bertingkat: **Program ➔ Kegiatan ➔ Sub Kegiatan ➔ Rekening Belanja ➔ Rincian Komponen**.
-- Informasi detail per komponen: Standar harga, koefisien, volume, satuan, dan total pagu.
-- Fitur **Cetak RKA Resmi**: Tampilan cetak standar lampiran anggaran dalam format **A4 Landscape** dengan layout yang rapi dan siap cetak.
+### 2. Sinkronisasi Data SIPD RI
+- Endpoint sinkronisasi (`/api/sync-rka`, `/sync-rka`, `/wp-admin/admin-ajax.php`) untuk menerima data langsung dari ekstensi browser.
+- Mendukung sinkronisasi pagu unit SKPD, master akun belanja, master sumber dana, sub kegiatan, rincian RKA, capaian program, indikator sub kegiatan, pendapatan, dan pembiayaan.
 
-### 3. Modul Pendapatan & Pembiayaan
-- Monitoring akun pendapatan daerah beserta rincian target.
-- Pengelolaan data pembiayaan (Penerimaan Pembiayaan / SiLPA dan Pengeluaran Pembiayaan).
+### 3. Belanja & Rincian RKA SKPD
+- Penelusuran data per SKPD dan Sub-Unit hingga level **Program ➔ Kegiatan ➔ Sub Kegiatan ➔ Rekening Belanja ➔ Rincian Komponen**.
+- Detail komponen RKA mencakup standar harga, koefisien, volume, satuan, sumber dana, dan pagu.
+- **Cetak RKA**: Tampilan cetak standar A4 Landscape dengan pilihan mode **Rincian** dan **Paket**.
 
-### 4. Manajemen Snapshot: Posting & Unposting Data
-- **Posting Data**: Membekukan (*freeze snapshot*) kondisi data aktif berjalan ke dalam arsip resmi per tahapan anggaran.
-- **Tahapan Anggaran Dinamis**: Tambah dan kelola tahapan anggaran (misal: *Rancangan Awal*, *Rancangan*, *RKA SKPD*, *Persetujuan Bersama*, *Penetapan APBD*, *Perubahan APBD*) secara fleksibel.
-- **Posting Explorer**: Jelajahi data historis/arsip postingan hingga ke level detail sub-kegiatan, rincian komponen RKA, dan cetak RKA arsip.
+### 4. Pendapatan & Pembiayaan Daerah
+- Monitoring data **Pendapatan Daerah** per SKPD beserta rincian target akun pendapatan.
+- Pengelolaan data **Pembiayaan Daerah** (Penerimaan Pembiayaan / SiLPA dan Pengeluaran Pembiayaan) per SKPD.
+
+### 5. Manajemen Snapshot: Posting & Unposting Data
+- **Posting Data**: Membekukan (*freeze snapshot*) kondisi data aktif berjalan ke dalam arsip per tahapan anggaran.
+- **Tahapan Anggaran Dinamis**: Tambah dan kelola tahapan anggaran (misal: *Rancangan Awal*, *Rancangan*, *RKA SKPD*, *Persetujuan Bersama*, *Penetapan APBD*, *Perubahan APBD*).
+- **Posting Explorer**: Menjelajahi arsip postingan hingga level detail sub-kegiatan, pendapatan, pembiayaan, dan cetak RKA arsip.
 - **Tindih & Unposting**:
-  - *Tindih*: Memperbarui data snapshot yang sudah ada dengan data aktif terkini.
-  - *Unposting*: Memulihkan (*restore*) data arsip snapshot kembali menjadi data aktif berjalan dengan aman.
+  - *Tindih (Overwrite)*: Memperbarui snapshot yang sudah ada dengan data aktif terbaru.
+  - *Unposting*: Memulihkan data snapshot kembali menjadi data aktif berjalan.
 
-### 5. Notifikasi Interaktif
-- Terintegrasi penuh dengan **React Hot Toast** untuk setiap aksi pengguna (tambah, edit, hapus, posting, unposting, sinkronisasi data).
+### 6. Laporan Kelengkapan Perubahan Perbup
+- Perbandingan dan pemeriksaan kelengkapan perubahan anggaran antar sumber data (data **Live** berjalan maupun arsip **Posting**).
+- Dilengkapi filter Tahun Anggaran, SKPD, dan Sumber Dana, dengan tampilan ringkasan serta hierarki tree.
 
-### 6. User Management & Keamanan
-- Autentikasi berbasis session dengan pembagian hak akses (Developer, Administrator, User).
-- Manajemen pengguna terpadu.
-
----
-
-## 🛠️ Tech Stack
-
-- **Backend:** [Laravel 11](https://laravel.com/) (PHP 8.2+)
-- **Frontend:** [React 18](https://react.dev/), [Vite](https://vitejs.dev/)
-- **UI & Styling:** [Tailwind CSS](https://tailwindcss.com/), [Lucide React Icons](https://lucide.dev/)
-- **Notifications:** [React Hot Toast](https://react-hot-toast.com/)
-- **Database:** [MySQL](https://www.mysql.com/) / [MariaDB](https://mariadb.org/)
+### 7. Data Master, Utilitas Database & User Management
+- **Master Data**: Pengelolaan **Master SKPD** (termasuk pembaruan data unit), **Master Akun**, dan **Sumber Dana**.
+- **Import & Export DB**: Ekspor ringkasan/skrip SQL dan impor file SQL langsung melalui antarmuka web.
+- **Pembersihan Data**: Reset data secara keseluruhan, per modul, atau per SKPD.
+- **Manajemen Pengguna**: Autentikasi berbasis session serta pengelolaan akun pengguna (tambah, ubah, hapus).
 
 ---
 
-## 💻 Panduan Instalasi (Development Lokal)
+## Tech Stack
+
+- **Backend:** [Laravel 13](https://laravel.com/) (`^13.17`), PHP `^8.3`
+- **Frontend:** [React 19](https://react.dev/) (`^19.3.1`), [Vite 8](https://vitejs.dev/) (`^8.0.0`)
+- **UI & Styling:** [Tailwind CSS v4](https://tailwindcss.com/) (`^4.0.0`), [Lucide React](https://lucide.dev/) (`^1.78.0`)
+- **Notifications:** [React Hot Toast](https://react-hot-toast.com/) (`^2.6.1`)
+- **Database:** [MySQL](https://www.mysql.com/) / [MariaDB](https://mariadb.org/) (atau SQLite untuk pengembangan lokal)
+
+---
+
+## Panduan Instalasi (Development Lokal)
 
 ### Prasyarat
-- PHP >= 8.2
+- PHP `>= 8.3`
 - Composer
 - Node.js & NPM
-- MySQL / MariaDB (disarankan menggunakan Laragon / XAMPP)
+- MySQL / MariaDB (misalnya Laragon / XAMPP) atau SQLite
 
 ### Langkah-langkah
 
@@ -69,6 +76,10 @@ Aplikasi berbasis web untuk mengelola, menganalisis, dan membekukan (*snapshot p
    composer install
    npm install
    ```
+   Atau gunakan skrip setup bawaan Composer:
+   ```bash
+   composer run setup
+   ```
 
 3. **Konfigurasi Environment**
    Salin file `.env.example` menjadi `.env`:
@@ -76,7 +87,7 @@ Aplikasi berbasis web untuk mengelola, menganalisis, dan membekukan (*snapshot p
    cp .env.example .env
    php artisan key:generate
    ```
-   Sesuaikan konfigurasi database pada `.env`:
+   Sesuaikan koneksi database pada `.env` (default `.env.example` menggunakan `sqlite`; untuk MySQL gunakan konfigurasi berikut):
    ```env
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
@@ -92,76 +103,126 @@ Aplikasi berbasis web untuk mengelola, menganalisis, dan membekukan (*snapshot p
    ```
 
 5. **Jalankan Aplikasi**
-   - Jalankan Vite development server:
+   - Jalankan development server (Laravel + Vite sekaligus):
+     ```bash
+     composer run dev
+     ```
+   - Atau jalankan secara terpisah:
      ```bash
      npm run dev
-     ```
-   - Buka aplikasi melalui local domain Laragon (misal: `http://sipd-local.test`) atau jalankan server lokal:
-     ```bash
      php artisan serve
      ```
+   - Jika menggunakan Laragon, akses melalui virtual host lokal (misal `http://sipd-local.test`).
 
 ---
 
-## 🖥️ Panduan Deployment (Windows Server 2012 / Lingkungan Tanpa CLI)
+## Panduan Deployment (Windows Server / Lingkungan Tanpa CLI)
 
-Repositori ini telah disiapkan khusus untuk server produksi Windows Server yang **tidak memiliki / tidak dapat menjalankan `npm` dan `php artisan`**.
+Untuk server produksi yang tidak menjalankan `npm` dan `php artisan` secara langsung:
 
-### 1. Build Aset di Komputer Lokal
-Seluruh aset frontend di-compile secara lokal ke folder `public/build` dan disimpan di repositori Git.
-```bash
-npm run build
-git add .
-git commit -m "build: compile assets"
-git push origin main
-```
+1. **Build Aset di Komputer Lokal**
+   ```bash
+   npm run build
+   git add .
+   git commit -m "build: compile assets"
+   git push origin main
+   ```
+   Aplikasi juga sudah mendukung deteksi base URL otomatis untuk deployment di dalam subfolder (misalnya `http://<host>/sipd-local/public/`).
 
-### 2. Tarik Update di Windows Server
-Pada Windows Server, buka Git Bash / Command Prompt di folder instalasi:
-```bash
-git pull origin main
-```
-*Aset antarmuka React langsung aktif otomatis tanpa perlu instalasi Node.js di server.*
+2. **Tarik Update di Server**
+   ```bash
+   git pull origin main
+   ```
+   Aset React hasil kompilasi di `public/build/` langsung terbaca tanpa perlu instalasi Node.js di server.
 
-### 3. Eksekusi Skrip Database di Server
-Jika server tidak dapat menjalankan `php artisan migrate`, gunakan skrip SQL siap pakai:
-- Lokasi file: `database/update_server_posting.sql`
-- Buka **phpMyAdmin**, **HeidiSQL**, atau **Navicat** di server.
-- Impor atau jalankan (*Execute*) isi file `database/update_server_posting.sql` ke database target.
+3. **Eksekusi Skrip Database di Server**
+   Jika server tidak menjalankan `php artisan migrate`, jalankan file `database/update_server_posting.sql` melalui **phpMyAdmin**, **HeidiSQL**, atau **Navicat** ke database target.
 
 ---
 
-## 📂 Struktur Direktori Utama
+## Struktur Direktori Utama
 
 ```text
 SIPD-Penganggaran/
 ├── app/
 │   ├── Http/Controllers/
-│   │   ├── PostingController.php       # Logika snapshot posting, unposting & tahapan
-│   │   ├── RkaController.php           # Logika sub kegiatan, rincian RKA & cetak
-│   │   ├── PendapatanController.php    # Modul pendapatan
-│   │   ├── PembiayaanController.php    # Modul pembiayaan (SiLPA)
-│   │   └── UserController.php          # Manajemen user & auth
-│   └── Models/                         # Eloquent Model (PostingSession, Rka, SubKeg, dll.)
+│   │   ├── AuthController.php                  # Login, logout, dan cek sesi user
+│   │   ├── Controller.php                      # Base controller Laravel
+│   │   ├── DashboardController.php             # Endpoint utama dashboard
+│   │   ├── DataManagementController.php        # Query data APBD, master, reset, import & export SQL
+│   │   ├── LaporanController.php               # Laporan Kelengkapan Perubahan Perbup
+│   │   ├── PostingController.php               # Snapshot posting, unposting, overwrite & tahapan
+│   │   ├── SipdSyncController.php              # Penerima sinkronisasi data dari ekstensi SIPD RI
+│   │   └── UserController.php                  # CRUD manajemen akun pengguna
+│   ├── Models/
+│   │   ├── ActivityLog.php                     # Log aktivitas pengguna & sistem
+│   │   ├── CapaianProgram.php                  # Data capaian program
+│   │   ├── DataUnit.php                        # Master unit & sub-unit SKPD
+│   │   ├── MasterAkun.php                      # Master kode rekening / akun belanja
+│   │   ├── MasterSumberDana.php                # Master sumber dana
+│   │   ├── Pembiayaan.php                      # Rincian data pembiayaan daerah
+│   │   ├── PembiayaanSkpd.php                  # Rekap pembiayaan per SKPD
+│   │   ├── Pendapatan.php                      # Rincian data pendapatan daerah
+│   │   ├── PendapatanSkpd.php                  # Rekap pendapatan per SKPD
+│   │   ├── PostingSession.php                  # Header sesi arsip snapshot posting
+│   │   ├── PostingTahapan.php                  # Master tahapan anggaran posting
+│   │   ├── Rka.php                             # Rincian komponen RKA belanja
+│   │   ├── SubKegiatanBl.php                   # Data sub kegiatan belanja langsung
+│   │   ├── SubKegiatanIndikator.php            # Indikator keluaran sub kegiatan
+│   │   ├── SyncLog.php                         # Riwayat sinkronisasi dari ekstensi
+│   │   └── User.php                            # Model autentikasi pengguna
+│   ├── Providers/
+│   │   └── AppServiceProvider.php              # Konfigurasi service provider aplikasi
+│   └── Services/
+│       ├── DashboardAnalyticsService.php       # Agregasi statistik dashboard, monitoring & cache
+│       ├── SqlExportService.php                # Layanan ekspor database ke skrip SQL
+│       ├── SqlImportService.php                # Layanan impor file SQL ke database
+│       └── SystemLogService.php                # Pencatatan log sinkronisasi, aktivitas & cache version
 ├── database/
-│   ├── migrations/                     # File migrasi Laravel
-│   └── update_server_posting.sql       # Skrip SQL siap eksekusi di server produksi
+│   ├── factories/UserFactory.php               # Factory data user untuk testing/seeding
+│   ├── migrations/                             # Migrasi skema tabel & indeks performa
+│   ├── seeders/DatabaseSeeder.php              # Seeder awal database
+│   └── update_server_posting.sql               # Skrip SQL untuk update manual di server produksi
 ├── public/
-│   └── build/                          # Bundled & compiled assets (Vite React & Tailwind)
+│   └── build/                                  # Hasil build Vite (React & Tailwind CSS)
 ├── resources/
-│   ├── css/app.css                     # Tailwind custom styling
+│   ├── css/app.css                             # Stylesheet utama (Tailwind CSS v4)
 │   └── js/
-│       ├── components/                 # Navbar, Sidebar, Modal, dll.
-│       ├── pages/                      # PostingData, PostingExplorer, RkaPrintView, dll.
-│       └── App.jsx                     # Router utama & Provider Notifikasi
+│       ├── components/
+│       │   ├── dashboard/
+│       │   │   ├── DashboardCharts.jsx         # Grafik ringkasan & komposisi APBD
+│       │   │   └── SystemMonitoringPanel.jsx   # Panel status DB, server & log sinkronisasi
+│       │   ├── Footer.jsx                      # Komponen footer aplikasi
+│       │   ├── Navbar.jsx                      # Topbar (filter tahun anggaran, user, toggle sidebar)
+│       │   └── Sidebar.jsx                     # Navigasi utama aplikasi SADA SIPD
+│       ├── pages/
+│       │   ├── Dashboard.jsx                   # Halaman ringkasan APBD & monitoring
+│       │   ├── ImportDatabase.jsx              # Halaman import & export database SQL
+│       │   ├── KosongkanData.jsx               # Halaman pembersihan / reset data
+│       │   ├── LaporanPerbup.jsx               # Halaman Laporan Kelengkapan Perubahan Perbup
+│       │   ├── Login.jsx                       # Halaman autentikasi pengguna
+│       │   ├── MasterAkun.jsx                  # Halaman master akun belanja
+│       │   ├── MasterSkpd.jsx                  # Halaman master SKPD & edit unit
+│       │   ├── MasterSumberDana.jsx            # Halaman master sumber dana
+│       │   ├── Pembiayaan.jsx                  # Halaman pembiayaan daerah
+│       │   ├── Pendapatan.jsx                  # Halaman pendapatan daerah
+│       │   ├── PostingData.jsx                 # Halaman manajemen snapshot posting & tahapan
+│       │   ├── PostingExplorer.jsx             # Penjelajah arsip snapshot posting
+│       │   ├── RkaPrintView.jsx                # Tampilan cetak RKA A4 Landscape (Rincian & Paket)
+│       │   ├── SkpdList.jsx                    # Daftar SKPD & pagu belanja
+│       │   ├── SubKegiatan.jsx                 # Daftar sub kegiatan & rekening belanja
+│       │   ├── SubKegiatanDetailModal.jsx      # Modal detail rincian komponen sub kegiatan
+│       │   └── UserManagement.jsx              # Halaman manajemen pengguna
+│       └── app.jsx                             # Root SPA, interceptor base URL & Toaster
 └── routes/
-    └── web.php                         # Routing aplikasi & API endpoints internal
+    ├── console.php                             # Command artisan kustom
+    └── web.php                                 # Route API internal, endpoint sinkronisasi & SPA fallback
 ```
 
 ---
 
-## 📝 Lisensi
+## Lisensi
 
-Aplikasi ini dikembangkan untuk kebutuhan internal pengelolaan dan analisis data perencanaan anggaran daerah.
+Aplikasi ini dikembangkan untuk kebutuhan internal pengelolaan, sinkronisasi, dan analisis data perencanaan anggaran daerah.
 
 Dikelola oleh [@sakaadinugraha-eng](https://github.com/sakaadinugraha-eng).
