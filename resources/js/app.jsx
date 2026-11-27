@@ -47,6 +47,7 @@ import MasterSkpd from './pages/MasterSkpd';
 import Pendapatan from './pages/Pendapatan';
 import Pembiayaan from './pages/Pembiayaan';
 import PostingData from './pages/PostingData';
+import LaporanPerbup from './pages/LaporanPerbup';
 import ImportDatabase from './pages/ImportDatabase';
 import { Toaster, toast } from 'react-hot-toast';
 
@@ -343,6 +344,10 @@ function App() {
 
               {activeTab === 'posting' && (
                 <PostingData tahunAnggaran={tahunAnggaran} />
+              )}
+
+              {activeTab === 'laporan-perbup' && (
+                <LaporanPerbup tahunAnggaran={tahunAnggaran} />
               )}
 
               {activeTab === 'master-skpd' && (

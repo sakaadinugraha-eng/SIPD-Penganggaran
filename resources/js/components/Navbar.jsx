@@ -41,6 +41,7 @@ export default function Navbar({
     pendapatan: 'Target & Rincian Rekening Pendapatan Daerah',
     pembiayaan: 'Pembiayaan Daerah (Penerimaan & Pengeluaran)',
     posting: 'Penganggaran: Posting & Unposting Data Anggaran',
+    'laporan-perbup': 'Laporan: Kelengkapan Perubahan Perbup',
     'master-skpd': 'Pengaturan: Master SKPD & Kepala Unit',
     'master-akun': 'Pengaturan: Master Akun / Rekening Belanja & Pendapatan',
     'sumber-dana': 'Pengaturan: Master Sumber Pendanaan APBD',

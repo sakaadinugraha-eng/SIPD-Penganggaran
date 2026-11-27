@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DataManagementController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PostingController;
+use App\Http\Controllers\LaporanController;
 
 // Endpoint Sinkronisasi Extension (Tanpa CSRF / Auth agar extension bisa langsung POST / GET status)
 Route::match(['get', 'post'], '/api/sync-rka', [SipdSyncController::class, 'handle'])->name('api.sync_rka');
@@ -58,6 +59,11 @@ Route::prefix('api')->group(function () {
     Route::post('/posting/{id}/overwrite', [PostingController::class, 'overwrite']);
     Route::post('/posting/{id}/unposting', [PostingController::class, 'unposting']);
     Route::delete('/posting/{id}', [PostingController::class, 'destroy']);
+
+    // Laporan API
+    Route::get('/laporan/perbup/options', [LaporanController::class, 'getPerbupOptions']);
+    Route::get('/laporan/perbup/summary', [LaporanController::class, 'getPerbupSummary']);
+    Route::get('/laporan/perbup/tree', [LaporanController::class, 'getPerbupTree']);
 
     // User Management API
     Route::get('/users', [UserController::class, 'index']);
