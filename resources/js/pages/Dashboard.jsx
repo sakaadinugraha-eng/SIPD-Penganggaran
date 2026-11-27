@@ -266,7 +266,7 @@ export default function Dashboard({
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 text-indigo-100 text-[11px] font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>SADA SIPD</span>
+                <span>SADA SIPD &bull; Sinkronisasi Anggaran dan Data</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-300/30 text-white text-[11px] font-bold">
                 <Calendar className="w-3.5 h-3.5" aria-hidden="true" />

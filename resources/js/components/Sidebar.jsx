@@ -186,7 +186,9 @@ export default function Sidebar({
                 />
                 <div className="min-w-0">
                   <h1 className="text-sm font-bold text-slate-900 tracking-tight truncate">SADA SIPD</h1>
-                  <p className="text-[11px] text-slate-500 font-medium truncate">Penganggaran TA {tahunAnggaran}</p>
+                  <p className="text-[10px] text-slate-500 font-medium truncate" title="Sinkronisasi Anggaran dan Data">
+                    Sinkronisasi Anggaran dan Data
+                  </p>
                 </div>
               </div>
 
