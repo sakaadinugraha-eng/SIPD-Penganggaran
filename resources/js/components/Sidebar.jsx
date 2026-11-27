@@ -150,8 +150,8 @@ export default function Sidebar({
       <aside
         aria-label="Navigasi Utama"
         className={`fixed inset-y-0 left-0 lg:static bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 h-screen transition-all duration-300 ease-in-out z-50 lg:z-30 print:hidden ${
-          mobileOpen ? 'translate-x-0 w-64 shadow-xl' : '-translate-x-full lg:translate-x-0'
-        } ${isCollapsedDesktop ? 'lg:w-20' : 'lg:w-64'}`}
+          mobileOpen ? 'translate-x-0 w-72 shadow-xl' : '-translate-x-full lg:translate-x-0'
+        } ${isCollapsedDesktop ? 'lg:w-20' : 'lg:w-[272px]'}`}
       >
         {/* Brand Header */}
         <div className={`h-16 border-b border-slate-100 flex items-center shrink-0 ${isCollapsedDesktop ? 'justify-center px-2' : 'justify-between px-4'}`}>
@@ -192,21 +192,18 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* Tombol tutup di mobile vs collapse di desktop */}
-              <button
-                type="button"
-                onClick={() => (mobileOpen && setMobileOpen ? setMobileOpen(false) : setCollapsed(true))}
-                aria-label={mobileOpen ? 'Tutup Menu' : 'Ciutkan Sidebar'}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                title={mobileOpen ? 'Tutup Menu' : 'Ciutkan Sidebar'}
-              >
-                {mobileOpen ? (
-                  <X className="w-5 h-5 lg:hidden" aria-hidden="true" />
-                ) : (
-                  <PanelLeftClose className="w-5 h-5" aria-hidden="true" />
-                )}
-                {mobileOpen && <PanelLeftClose className="w-5 h-5 hidden lg:block" aria-hidden="true" />}
-              </button>
+              {/* Tombol tutup khusus mobile (desktop sudah ada di Navbar) */}
+              {mobileOpen && setMobileOpen && (
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Tutup Menu"
+                  className="lg:hidden min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  title="Tutup Menu"
+                >
+                  <X className="w-5 h-5" aria-hidden="true" />
+                </button>
+              )}
             </>
           )}
         </div>
@@ -381,7 +378,7 @@ export default function Sidebar({
                       key={sub.id}
                       onClick={() => handleSelectTab(sub.id)}
                       aria-current={isSubActive ? 'page' : undefined}
-                      className={`relative w-full min-h-[38px] flex items-center justify-between px-3 py-2 rounded-xl text-xs transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      className={`relative w-full min-h-[38px] flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                         isSubActive
                           ? 'bg-indigo-50 text-indigo-800 font-bold border border-indigo-200'
                           : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium'
@@ -392,7 +389,7 @@ export default function Sidebar({
                       )}
                       <div className="flex items-center gap-2.5 min-w-0">
                         <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-indigo-700' : 'text-slate-500'}`} aria-hidden="true" />
-                        <span className="truncate text-left">{sub.label}</span>
+                        <span className="leading-snug text-left">{sub.label}</span>
                       </div>
                       {isSubActive && (
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0" aria-hidden="true" />

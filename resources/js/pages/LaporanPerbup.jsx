@@ -5,7 +5,6 @@ import {
   Search,
   ChevronRight,
   ChevronDown,
-  Printer,
   Download,
   RefreshCw,
   Filter,
@@ -24,8 +23,10 @@ import {
   Eye,
   X,
   FileSpreadsheet,
+  FileText,
   Maximize2,
   Minimize2,
+  Check,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -293,6 +294,147 @@ function countVisibleRows(nodes, expandedPaths, parentPath = '') {
   return count;
 }
 
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  allLabel,
+  placeholder = 'Ketik untuk mencari...',
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setTimeout(() => inputRef.current?.focus(), 20);
+    }
+  }, [open]);
+
+  const selectedOption = options.find((o) => o.value === value);
+  const displayLabel = value === 'all' ? allLabel : (selectedOption?.label || value);
+
+  const filteredOptions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q));
+  }, [options, query]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 flex items-center justify-between gap-2 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+      >
+        <span className="truncate text-left">{displayLabel}</span>
+        <div className="flex items-center gap-1 shrink-0">
+          {value !== 'all' && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange('all');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  onChange('all');
+                }
+              }}
+              title="Reset pilihan"
+              className="p-0.5 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700"
+            >
+              <X className="w-3 h-3" />
+            </span>
+          )}
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-1.5 bg-white rounded-xl border border-slate-200 shadow-lg z-40 overflow-hidden">
+          <div className="p-2 border-b border-slate-100 bg-slate-50">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={placeholder}
+                className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-64 overflow-y-auto py-1">
+            <button
+              type="button"
+              onClick={() => {
+                onChange('all');
+                setOpen(false);
+              }}
+              className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-indigo-50 cursor-pointer ${
+                value === 'all' ? 'bg-indigo-50/70 text-indigo-800 font-semibold' : 'text-slate-700'
+              }`}
+            >
+              <span className="truncate">{allLabel}</span>
+              {value === 'all' && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+            </button>
+
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-center text-[11px] text-slate-500">
+                Tidak ada hasil untuk &ldquo;{query}&rdquo;
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = value === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.key || opt.value}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-indigo-50 cursor-pointer ${
+                      isSelected ? 'bg-indigo-50/70 text-indigo-800 font-semibold' : 'text-slate-700'
+                    }`}
+                  >
+                    <span className="break-words leading-snug">{opt.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [sources, setSources] = useState([]);
@@ -334,10 +476,29 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
   const [activeDepth, setActiveDepth] = useState(8);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Modals: Detail Baris, Riwayat Sinkronisasi, Deteksi Anomali
+  // Modals & Dropdowns
   const [detailModal, setDetailModal] = useState(null);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [anomalyModalOpen, setAnomalyModalOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setExportMenuOpen(false);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setExportMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, []);
 
   // 1. Load opsi sumber data, SKPD, sumber dana, dan riwayat sinkronisasi
   const fetchOptions = useCallback(async () => {
@@ -855,6 +1016,168 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
     toast.success(`File CSV berhasil diunduh (${rows.length} baris)`);
   };
 
+  const buildPrintableDocumentHtml = (rows, labelA, labelB, activeLvlLabel, isWord = false) => {
+    const escapeHtml = (str) =>
+      String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const fmtRp = (v) =>
+      new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(v || 0));
+
+    const tableRows = rows
+      .map((r) => {
+        const bg =
+          r.rawLevel === 'skpd'
+            ? '#eef2ff'
+            : r.rawLevel === 'program'
+            ? '#f8fafc'
+            : '#ffffff';
+        const fw = ['skpd', 'program', 'kegiatan', 'belanja'].includes(r.rawLevel) ? 'bold' : 'normal';
+        const padLeft = Math.max(0, r.depth - 1) * 10;
+        return `<tr style="background:${bg};font-weight:${fw};">
+          <td>${escapeHtml(r.level)}</td>
+          <td>${escapeHtml(r.kode)}</td>
+          <td style="padding-left:${padLeft + 5}px;">${escapeHtml(r.uraian)}</td>
+          <td>${escapeHtml(r.spesifikasi)}</td>
+          <td>${escapeHtml(r.koefisien)}</td>
+          <td>${escapeHtml(r.satuan)}</td>
+          <td>${escapeHtml(r.sumber_dana)}</td>
+          <td style="text-align:right;white-space:nowrap;">${fmtRp(r.total_a)}</td>
+          <td style="text-align:right;white-space:nowrap;">${fmtRp(r.total_b)}</td>
+          <td style="text-align:right;white-space:nowrap;">${fmtRp(r.selisih)}</td>
+          <td style="text-align:right;white-space:nowrap;">${Number(r.persen ?? 0)}%</td>
+          <td style="text-align:center;">${escapeHtml(r.status)}</td>
+        </tr>`;
+      })
+      .join('');
+
+    const wordAttrs = isWord
+      ? `xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"`
+      : '';
+
+    const wordXml = isWord
+      ? `<!--[if gte mso 9]><xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml><![endif]-->`
+      : '';
+
+    return `<!DOCTYPE html>
+      <html ${wordAttrs}>
+      <head>
+        <meta charset="utf-8" />
+        <title>Laporan Kelengkapan Perubahan Perbup - TA ${escapeHtml(tahunAnggaran)}</title>
+        ${wordXml}
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          @page WordSection1 {
+            size: 29.7cm 21.0cm;
+            mso-page-orientation: landscape;
+            margin: 1.0cm 1.0cm 1.0cm 1.0cm;
+          }
+          div.WordSection1 { page: WordSection1; }
+          body { font-family: Calibri, Arial, sans-serif; font-size: 8.5pt; color: #0f172a; margin: 0; padding: 6px; }
+          h2 { margin: 0 0 3px 0; font-size: 12pt; }
+          p { margin: 0 0 8px 0; font-size: 8.5pt; color: #334155; }
+          table { width: 100%; border-collapse: collapse; font-size: 7.5pt; table-layout: fixed; }
+          th, td { border: 1px solid #94a3b8; padding: 3px 4px; vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
+          th { background: #312e81; color: #ffffff; font-weight: bold; }
+          tr { page-break-inside: avoid; }
+        </style>
+      </head>
+      <body>
+        <div class="WordSection1">
+        <h2>Laporan Kelengkapan Perubahan Perbup - TA ${escapeHtml(tahunAnggaran)}</h2>
+        <p>Perbandingan: <b>${escapeHtml(labelA)}</b> vs <b>${escapeHtml(labelB)}</b> | Kedalaman: <b>${escapeHtml(activeLvlLabel)}</b></p>
+        <table>
+          <colgroup>
+            <col style="width:6%;" />
+            <col style="width:9%;" />
+            <col style="width:17%;" />
+            <col style="width:11%;" />
+            <col style="width:6%;" />
+            <col style="width:5%;" />
+            <col style="width:12%;" />
+            <col style="width:9%;" />
+            <col style="width:9%;" />
+            <col style="width:8%;" />
+            <col style="width:3%;" />
+            <col style="width:5%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Kode</th>
+              <th>Uraian / Komponen</th>
+              <th>Spesifikasi</th>
+              <th>Koefisien</th>
+              <th>Satuan</th>
+              <th>Sumber Dana</th>
+              <th style="text-align:right;">Sebelum</th>
+              <th style="text-align:right;">Sesudah</th>
+              <th style="text-align:right;">Selisih (Rp)</th>
+              <th style="text-align:right;">%</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        </div>
+      </body>
+      </html>`;
+  };
+
+  const handleExportWord = () => {
+    const rows = flattenForExport(displayedTree, activeDepth);
+    if (rows.length === 0) {
+      toast.error('Tidak ada data untuk diekspor.');
+      return;
+    }
+    const labelA = sources.find((s) => s.id === sourceA)?.label || sourceA;
+    const labelB = sources.find((s) => s.id === sourceB)?.label || sourceB;
+    const activeLvlLabel = LEVELS.find((l) => l.depth === activeDepth)?.label || `Level ${activeDepth}`;
+
+    const html = buildPrintableDocumentHtml(rows, labelA, labelB, activeLvlLabel, true);
+    const blob = new Blob(['\uFEFF' + html], { type: 'application/msword;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `kelengkapan-perubahan-perbup-TA${tahunAnggaran}-L${activeDepth}.doc`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Export Word berhasil (${rows.length} baris, s.d. ${activeLvlLabel})`);
+  };
+
+  const handleExportPdf = () => {
+    const rows = flattenForExport(displayedTree, activeDepth);
+    if (rows.length === 0) {
+      toast.error('Tidak ada data untuk diekspor.');
+      return;
+    }
+    const labelA = sources.find((s) => s.id === sourceA)?.label || sourceA;
+    const labelB = sources.find((s) => s.id === sourceB)?.label || sourceB;
+    const activeLvlLabel = LEVELS.find((l) => l.depth === activeDepth)?.label || `Level ${activeDepth}`;
+
+    const html = buildPrintableDocumentHtml(rows, labelA, labelB, activeLvlLabel, false);
+    const win = window.open('', '_blank', 'width=1200,height=800');
+    if (!win) {
+      toast.error('Pop-up diblokir browser. Izinkan pop-up untuk menyimpan PDF.');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      win.print();
+    }, 350);
+  };
+
   const sourceALabel = sources.find((s) => s.id === sourceA)?.label || 'Sebelum';
   const sourceBLabel = sources.find((s) => s.id === sourceB)?.label || 'Sesudah';
   const activeLevelObj = LEVELS.find((l) => l.depth === activeDepth) || LEVELS[7];
@@ -1113,32 +1436,67 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
             <span>Muat Ulang</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-800 transition cursor-pointer"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Export Excel</span>
-          </button>
+          <div ref={exportMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setExportMenuOpen((prev) => !prev)}
+              aria-expanded={exportMenuOpen}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold text-white transition cursor-pointer shadow-sm"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${exportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
 
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold text-white transition cursor-pointer shadow-sm"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Cetak</span>
-          </button>
+            {exportMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMenuOpen(false);
+                    handleExportPdf();
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 flex items-center gap-2.5 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-rose-600" />
+                  <span>Export PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMenuOpen(false);
+                    handleExportExcel();
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2.5 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>Export Excel (.xls)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMenuOpen(false);
+                    handleExportWord();
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-800 flex items-center gap-2.5 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>Export Word (.doc)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMenuOpen(false);
+                    handleExportCsv();
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2.5 cursor-pointer"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span>Export CSV (.csv)</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1207,18 +1565,17 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
               <Building2 className="w-3.5 h-3.5" />
               <span>Filter SKPD</span>
             </label>
-            <select
+            <SearchableSelect
               value={selectedSkpd}
-              onChange={(e) => setSelectedSkpd(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">Semua SKPD (Klik baris untuk detail)</option>
-              {skpds.map((skpd) => (
-                <option key={skpd.kode_skpd + skpd.nama_skpd} value={skpd.kode_skpd}>
-                  {skpd.kode_skpd} — {skpd.nama_skpd}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedSkpd}
+              allLabel="Semua SKPD (Klik baris untuk detail)"
+              placeholder="Ketik kode atau nama SKPD..."
+              options={skpds.map((skpd) => ({
+                key: skpd.kode_skpd + skpd.nama_skpd,
+                value: skpd.kode_skpd,
+                label: `${skpd.kode_skpd} — ${skpd.nama_skpd}`,
+              }))}
+            />
           </div>
 
           <div>
@@ -1226,16 +1583,17 @@ export default function LaporanPerbup({ tahunAnggaran = '2026' }) {
               <Coins className="w-3.5 h-3.5" />
               <span>Filter Sumber Dana</span>
             </label>
-            <select
+            <SearchableSelect
               value={selectedDana}
-              onChange={(e) => setSelectedDana(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">Semua Sumber Dana</option>
-              {sumberDanas.map((dana) => (
-                <option key={dana} value={dana}>{dana}</option>
-              ))}
-            </select>
+              onChange={setSelectedDana}
+              allLabel="Semua Sumber Dana"
+              placeholder="Ketik nama sumber dana..."
+              options={sumberDanas.map((dana) => ({
+                key: dana,
+                value: dana,
+                label: dana,
+              }))}
+            />
           </div>
 
           <div>
